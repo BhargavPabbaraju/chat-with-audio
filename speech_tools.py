@@ -29,8 +29,8 @@ class Transcriber:
             with self.loading_text.container():
                 st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
             
-            chunks = audio_processor.get_chunks(data,file_name,input_type)
-            text_generator = audio_processor.transcribe_free(chunks,language)
+            audio = audio_processor.convert_audio(data,file_name,input_type)
+            text_generator = audio_processor.transcribe_free(audio,language)
             
             st.markdown(f':blue[Transcribed Text:]')
             for text in text_generator:

@@ -21,7 +21,7 @@ class AudioProcessor:
     def __init__(self):
         self.chunks = None
     
-    def get_chunks(self,data,file_name,input_type=FileType.FILE):
+    def convert_audio(self,data,file_name,input_type=FileType.FILE):
         '''
         Split audio into chunks and convert audio from wav/ogg/mp3 into wav for google speech recognition api
 
@@ -31,7 +31,7 @@ class AudioProcessor:
             input_type(FileType,optional): Whether the audio is from a file or from the microphone. Deafaults to File Input.
         
         Returns:
-            audios(list): List of chunks converted into wav format ready to be transcribed by Google Speech Recognition API
+            audio(list):audio converted into wav format ready to be transcribed by Google Speech Recognition API
         
         '''
         logging.debug('Entered the get_chunks function')
@@ -42,56 +42,27 @@ class AudioProcessor:
                 f.write(data.getbuffer())
         
         logging.info('Input Audio saved as '+file_name)
-
+        
         try:
             audio = AudioSegment.from_file(file_name)
-            chunk_duration = 60 * 1000 #one minute
-            total_duration = len(audio)
-            logging.info(f'Audio has a total duration of {total_duration/60000} minutes')
-            logging.info(f'Audio split into {ceil(total_duration/chunk_duration)} chunks')
-            
-            
-            #Create a folder to save audio chunks
-            folder_name = "audio-chunks"
-            if not os.path.isdir(folder_name):
-                os.mkdir(folder_name)
-
-            audios=[]
-
-            chunk_number = 1
-            for start_time in range(0,total_duration,chunk_duration):
-                end_time = start_time + chunk_duration
-                chunk = audio[start_time:end_time]
-                file_name = os.path.join(folder_name,f'chunk{chunk_number}.wav')
-                chunk.export(
-                    file_name,
-                    format='wav',
-                    parameters=["-ac", "1", "-ar", "16000"]
-                    )
-                with sr.AudioFile(file_name) as source:
-                    audios.append(recognizer.record(source))
-
-                chunk_number+=1
-                logging.info('Saved '+file_name)
-            
-            
-            
-            return audios
-
+            return audio
+        
         except:
             logging.exception('Could not load input')
             raise ValueError('Could not load input')
+    
 
+     
 
   
 
 
-    def transcribe_free(self,chunks,language=Language.USENGLISH):
+    def transcribe_free(self,audio,language=Language.USENGLISH):
         '''
         Returns the transcribed text from audio using Google Speech Recognition API
 
         Args:
-            audios(list): List of chunks converted into wav format ready to be transcribed by Google Speech Recognition API
+            audio():   audio converted into wav format ready to be transcribed by Google Speech Recognition API
             language(Language,optional): The language the transcribed text should be in. Defaults to US English.
         
         Returns:
@@ -104,17 +75,47 @@ class AudioProcessor:
         '''
 
         
-        
-        for audio in chunks:
+        #Create a folder to save audio chunks
+        folder_name = "audio-chunks"
+        if not os.path.isdir(folder_name):
+            os.mkdir(folder_name)
+
+
+
+        chunk_number = 1
+        chunk_duration = 60 * 1000 #one minute
+        total_duration = len(audio)
+
+        logging.info(f'Audio has a total duration of {total_duration/60000} minutes')
+        logging.info(f'Audio split into {ceil(total_duration/chunk_duration)} chunks')
+
+        for start_time in range(0,total_duration,chunk_duration):
+            end_time = start_time + chunk_duration
+            chunk = audio[start_time:end_time]
+            file_name = os.path.join(folder_name,f'chunk{chunk_number}.wav')
+            chunk.export(
+                file_name,
+                format='wav',
+                parameters=["-ac", "1", "-ar", "16000"]
+                )
+            with sr.AudioFile(file_name) as source:
+                file = (recognizer.record(source))
+            
             try:
-                text =recognizer.recognize_google(audio,language=language)
+                text =recognizer.recognize_google(file,language=language)
                 yield text
             except sr.UnknownValueError:
-                raise ValueError("Speech Recognizer could not understand the audio")
+                yield ""
+                #raise ValueError("Speech Recognizer could not understand the audio")
                 
             except sr.RequestError as e:
-                raise ConnectionError(f"Could not request results from Google Speech Recognition service; {e}")
+                yield ""
+                #raise ConnectionError(f"Could not request results from Google Speech Recognition service; {e}")
         
+            chunk_number+=1
+            logging.info('Saved '+file_name)
+      
+            
     
        
 
