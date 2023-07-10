@@ -1,11 +1,5 @@
 
-###Loading API Keys
-import os
-from dotenv import load_dotenv,find_dotenv
-
-load_dotenv(find_dotenv())
-HUGGINGFACEHUB_API_TOKEN = os.environ["HUGGINGFACEHUB_API_TOKEN"]
-
+import logging
 
 from langchain.llms import OpenAI,HuggingFaceHub
 from langchain import PromptTemplate
@@ -16,18 +10,36 @@ from langchain.chains import LLMChain,SequentialChain
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
-from tools import Transcriber
+from speech_tools import Transcriber
 
 from constants import FileType
 
 
+###Loading API Keys
+import os
+from dotenv import load_dotenv,find_dotenv
+
+
+load_dotenv(find_dotenv())
+HUGGINGFACEHUB_API_TOKEN = os.environ["HUGGINGFACEHUB_API_TOKEN"]
+
+
 #LLMS
 repo_id = 'tiiuae/falcon-7b-instruct'
-falcon_llm = HuggingFaceHub(repo_id=repo_id,model_kwargs={"temperature":0.1,"max_new_tokens":500})
+falcon_llm = HuggingFaceHub(
+    repo_id=repo_id,
+    model_kwargs={"temperature":0.1,"max_new_tokens":500},
+    )
 
 ##Audio Tools
 transcriber = Transcriber()
 
+logging.basicConfig(
+    filename='debug.log',
+    filemode="w",
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    )
 
 
 #streamlit framework 

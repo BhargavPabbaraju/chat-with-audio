@@ -28,9 +28,13 @@ class Transcriber:
         try:
             with self.loading_text.container():
                 st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
-            text = audio_processor.transcribe_free(data,file_name,input_type,language)
+            
+            chunks = audio_processor.get_chunks(data,file_name,input_type)
+            text_generator = audio_processor.transcribe_free(chunks,language)
+            
             st.markdown(f':blue[Transcribed Text:]')
-            st.markdown(f':green[**{text}**]')
+            for text in text_generator:
+                st.markdown(f':green[**{text}**]')
             
         except ValueError as e:
             st.markdown(f':red[{e}]')
