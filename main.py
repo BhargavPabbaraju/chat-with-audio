@@ -10,7 +10,7 @@ from langchain.chains import LLMChain,SequentialChain
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
-from speech_tools import Transcriber
+from speech_tool import Transcriber
 
 from constants import FileType
 
@@ -31,8 +31,7 @@ falcon_llm = HuggingFaceHub(
     model_kwargs={"temperature":0.1,"max_new_tokens":500},
     )
 
-##Audio Tools
-transcriber = Transcriber()
+
 
 logging.basicConfig(
     filename='debug.log',
@@ -50,6 +49,9 @@ st.title('Chat With Audio')
 ###Input Options
 input_options = ['Load Audio File','Record Audio','Youtube URL']
 input_container = st.container()
+
+##Audio Tools
+transcriber = Transcriber(st.container())
 
 def change_option():
     global option
@@ -108,3 +110,5 @@ elif option == input_options[1]:
 else:
     with input_container.container():
         youtube_url = st.text_input("Enter Youtube url",key='youtube_url')
+
+    

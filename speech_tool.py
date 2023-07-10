@@ -6,12 +6,17 @@ from audio_processing import AudioProcessor
 
 audio_processor = AudioProcessor()
 
+
+
+
+
 class Transcriber:
     '''
         Transcribes speech to text , either using the GoogleSpeechRecognitionAPI or Whisper API
     '''
-    def __init__(self,type='free'):
+    def __init__(self,container,type='free'):
         self.type = type
+        self.container = container
         
     
     def transcribe_free(self,data,file_name,input_type=FileType.FILE,language=Language.USENGLISH):
@@ -24,21 +29,26 @@ class Transcriber:
             input_type(FileType,optional): Whether the audio is from a file or from the microphone. Deafaults to File Input.
             language(Language,optional): The language the transcribed text should be in. Defaults to US English.
         '''
-        self.loading_text = st.empty()
+        self.loading_text = self.container.empty()
+        full_text = ""
         try:
             with self.loading_text.container():
                 st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
+                    
             
-            chunks = audio_processor.get_chunks(data,file_name,input_type)
-            text_generator = audio_processor.transcribe_free(chunks,language)
-            
-            st.markdown(f':blue[Transcribed Text:]')
+            audio = audio_processor.convert_audio(data,file_name,input_type)
+            text_generator = audio_processor.transcribe_free(audio,language)
+            self.container.markdown(f':blue[Transcribed Text:]')
             for text in text_generator:
-                st.markdown(f':green[**{text}**]')
+                if text:
+                    self.container.markdown(f':green[**{text}**]')
+                    full_text+=text
+                else:
+                    self.container.markdown(f':red[**Could not transcribe some audio**]')
             
         except ValueError as e:
-            st.markdown(f':red[{e}]')
+            self.container.markdown(f':red[{e}]')
         except ConnectionError as e:
-            st.markdown(f':red[{e}]')
+            self.container.markdown(f':red[{e}]')
         finally:
             self.loading_text.empty()
