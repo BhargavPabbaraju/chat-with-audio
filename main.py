@@ -18,6 +18,7 @@ from audio_recorder_streamlit import audio_recorder
 
 from tools import Transcriber
 
+from constants import FileType
 
 
 #LLMS
@@ -64,7 +65,7 @@ if  option == input_options[0]:
         audio_file = st.file_uploader("Choose a file",type=['wav','mp3','ogg'])
         if audio_file:
             file_type = audio_file.type.split('/')[1]
-            transcriber.transcribe_free(audio_file,'audio.'+file_type,input_type='file')
+            transcriber.transcribe_free(audio_file,'audio.'+file_type,input_type=FileType.FILE)
 
        
         
@@ -85,7 +86,7 @@ elif option == input_options[1]:
         if audio_bytes:
             with input_container.container():
                 st.audio(audio_bytes)
-            transcriber.transcribe_free(audio_bytes,'audio.wav',input_type='record')
+            transcriber.transcribe_free(audio_bytes,'audio.wav',input_type=FileType.RECORD)
         
 
     
