@@ -2,9 +2,11 @@
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.chains import RetrievalQA
-from langchain import HuggingFaceHub
+from langchain.chains import ConversationalRetrievalChain
+from langchain import HuggingFaceHub,PromptTemplate
 from langchain.embeddings import HuggingFaceInstructEmbeddings
+from langchain.memory import ConversationBufferMemory
+
 
 import logging
 
@@ -42,9 +44,20 @@ class LLMQueryHandler:
                 )
         logging.debug('Loaded Falcon LLM')
 
+        template_string = """
+        You are provided transcribed text of an audio file. Answer questions based on it. 
+        If you do not know the answer just say you don't know. Do not make up an answer.
+        If you did not understand the question, say that you did not understand the question.
+        """
+        
+      
+       
+        self.prompt_template = PromptTemplate.from_template(template_string)
+        self.memory = ConversationBufferMemory(memory_key="chat_history",return_messages=True)
+        self.memory.save_context({"input":template_string},{"output":"Sure , give me a question"})
+
     def load_text(self,text,chain_type='stuff'):
-        with open('text.txt','w') as f:
-            f.write(text)
+        
         
         loader = TextLoader('text.txt')
         docs = loader.load()
@@ -55,11 +68,13 @@ class LLMQueryHandler:
 
         retriever = db.as_retriever(search_kwargs={"k":3})
 
-        self.qa_chain = RetrievalQA.from_chain_type(
+        self.qa_chain = ConversationalRetrievalChain.from_llm(
             llm=self.falcon_llm,
-            chain_type=chain_type,
             retriever=retriever,
-            return_source_documents=True,
+            return_source_documents=False,
+            memory = self.memory,
+            chain_type=chain_type,
+            verbose=True,
             )
 
     
@@ -68,7 +83,8 @@ class LLMQueryHandler:
             raise TypeError('Error Loading File')
         
         try:
-            return self.qa_chain(query)['result']
+            result = self.qa_chain({"question":query})
+            return result['answer']
         except ConnectionError:
             return ':red[Failed to Connect]'
             
