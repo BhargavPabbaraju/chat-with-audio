@@ -10,7 +10,7 @@ from langchain.chains import LLMChain,SequentialChain
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
-from speech_tool import Transcriber
+from tools import Transcriber,PromptProcessor
 
 from constants import FileType
 
@@ -46,24 +46,12 @@ st.title('Chat With Audio')
 input_container = st.container()
 transcribe_col,chat_col = st.columns(2)
 
-# st.markdown(
-#     """
-#     <style>
-#     .column-height {
-#         height: 300px; /* Set the desired height for the columns */
-#         overflow-y: scroll; /* Enable vertical scrolling if needed */
-#     }
-#     </style>
-#     """,
-#     unsafe_allow_html=True,
-# )
-# with transcribe_col:
-#     st.markdown("<div class='column-height'></div>", unsafe_allow_html=True)
-# with chat_col:
-#     st.markdown("<div class='column-height'></div>", unsafe_allow_html=True)
+
+
 
 ##Audio Tools
 transcriber = Transcriber(transcribe_col)
+prompt_processor = PromptProcessor(transcriber,chat_col)
 
 ###Input Options
 input_options = ['Load Audio File','Record Audio','Youtube URL']
@@ -141,10 +129,17 @@ with chat_col:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+
     
+if transcriber.got_input and not transcriber.processing:
+    if prompt:= st.chat_input("Say something"):
+        with chat_col.chat_message("user"):
+            st.markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        reply = prompt_processor.validate_prompt(prompt)
+        with chat_col.chat_message("bot"):
+            st.markdown(reply)
+            st.session_state.messages.append({"role": "bot", "content": reply})
 
 
-if prompt:= st.chat_input("Say something"):
-    with chat_col.chat_message("user"):
-        st.markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})

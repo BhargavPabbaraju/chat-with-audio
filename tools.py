@@ -17,6 +17,8 @@ class Transcriber:
     def __init__(self,container,type='free'):
         self.type = type
         self.container = container
+        self.got_input = False
+        self.processing = False
         
     
     def transcribe_free(self,data,file_name,input_type=FileType.FILE,language=Language.USENGLISH):
@@ -35,7 +37,8 @@ class Transcriber:
             with self.loading_text.container():
                 st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
                     
-            
+            self.got_input  = True
+            self.processing = True
             audio = audio_processor.convert_audio(data,file_name,input_type)
             text_generator = audio_processor.transcribe_free(audio,language)
             self.container.markdown(f':blue[Transcribed Text:]')
@@ -58,3 +61,23 @@ class Transcriber:
             self.container.markdown(f':red[{e}]')
         finally:
             self.loading_text.empty()
+            self.processing = False
+
+
+
+
+class PromptProcessor:
+    def __init__(self,transcriber,container):
+        self.transcriber = transcriber
+        self.container = container
+    
+
+    def validate_prompt(self,prompt):
+        if not self.transcriber.got_input:
+            return 'Please provide input first.'
+        if self.transcriber.got_input and self.transcriber.processing:
+            return 'Please wait till the whole audio is transcribed.'
+
+
+
+
