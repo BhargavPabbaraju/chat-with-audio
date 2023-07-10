@@ -43,15 +43,34 @@ logging.basicConfig(
 
 #streamlit framework 
 st.title('Chat With Audio')
+input_container = st.container()
+transcribe_col,chat_col = st.columns(2)
 
+# st.markdown(
+#     """
+#     <style>
+#     .column-height {
+#         height: 300px; /* Set the desired height for the columns */
+#         overflow-y: scroll; /* Enable vertical scrolling if needed */
+#     }
+#     </style>
+#     """,
+#     unsafe_allow_html=True,
+# )
+# with transcribe_col:
+#     st.markdown("<div class='column-height'></div>", unsafe_allow_html=True)
+# with chat_col:
+#     st.markdown("<div class='column-height'></div>", unsafe_allow_html=True)
 
+##Audio Tools
+transcriber = Transcriber(transcribe_col)
 
 ###Input Options
 input_options = ['Load Audio File','Record Audio','Youtube URL']
-input_container = st.container()
 
-##Audio Tools
-transcriber = Transcriber(st.container())
+
+
+
 
 def change_option():
     global option
@@ -111,4 +130,21 @@ else:
     with input_container.container():
         youtube_url = st.text_input("Enter Youtube url",key='youtube_url')
 
+
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+# Display chat messages from history on app rerun
+with chat_col:
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
     
+
+
+if prompt:= st.chat_input("Say something"):
+    with chat_col.chat_message("user"):
+        st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})

@@ -19,8 +19,17 @@ AudioSegment.ffprobe = 'fforobe.exe'
 recognizer = sr.Recognizer()
 
 
-def format_time(seconds):
-    return str(timedelta(seconds=seconds))
+def format_time(millis):
+    '''
+    Formats time from milliseconds to HH:MM:SS
+
+    Args:
+        millis(int):   Time in milliseconds
+    Returns:
+        time(str):  Time formatted as HH:MM:SS
+
+    '''
+    return str(timedelta(seconds=millis/1000))
 
 
 class AudioProcessor:
@@ -79,8 +88,9 @@ class AudioProcessor:
 
         chunk_duration = 60 * 1000 #one minute
         total_duration = len(audio)
+        total_chunks = ceil(total_duration/chunk_duration)
         logging.info(f'Audio has a total duration of {total_duration/60000} minutes')
-        logging.info(f'Audio split into {ceil(total_duration/chunk_duration)} chunks')
+        logging.info(f'Audio split into {total_chunks} chunks')
         
         
         #Create a folder to save audio chunks
@@ -105,15 +115,15 @@ class AudioProcessor:
                 sound = recognizer.record(source)
             try:
                 text = recognizer.recognize_google(sound,language=language)
-                yield text
+                yield {'start_time':start_time,'end_time':end_time,'text':text}
             except sr.UnknownValueError:
                 logging.exception(f"Speech Recognizer could not understand the audio from {format_time(start_time)} to {format_time(end_time)}")
-                yield ''
+                yield {'start_time':start_time,'end_time':end_time,'text':''}
                 #raise ValueError("Speech Recognizer could not understand the audio")
                 
             except sr.RequestError as e:
                 logging.exception(f"Could not request results from Google Speech Recognition service;")
-                yield ''
+                yield {'start_time':start_time,'end_time':end_time,'text':''}
                 #raise ConnectionError(f"Could not request results from Google Speech Recognition service; {e}")
 
             chunk_number+=1

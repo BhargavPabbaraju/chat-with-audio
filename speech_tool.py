@@ -2,7 +2,7 @@ from constants import FileType,Language
 
 import streamlit as st
 
-from audio_processing import AudioProcessor
+from audio_processing import AudioProcessor,format_time
 
 audio_processor = AudioProcessor()
 
@@ -39,12 +39,18 @@ class Transcriber:
             audio = audio_processor.convert_audio(data,file_name,input_type)
             text_generator = audio_processor.transcribe_free(audio,language)
             self.container.markdown(f':blue[Transcribed Text:]')
-            for text in text_generator:
+            for result in text_generator:
+                self.loading_text.empty()
+                with self.loading_text.container():
+                    chunk = format_time(result["start_time"]) + ' to ' + format_time(result["end_time"])
+                    st.markdown(f':blue[Processing {chunk}]')
+
+                text = result['text']
                 if text:
                     self.container.markdown(f':green[**{text}**]')
                     full_text+=text
                 else:
-                    self.container.markdown(f':red[**Could not transcribe some audio**]')
+                    self.container.markdown(f':red[**Could not transcribe audio from {chunk}**]')
             
         except ValueError as e:
             self.container.markdown(f':red[{e}]')
