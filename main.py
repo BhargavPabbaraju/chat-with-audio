@@ -24,8 +24,8 @@ from tools import Transcriber
 repo_id = 'tiiuae/falcon-7b-instruct'
 falcon_llm = HuggingFaceHub(repo_id=repo_id,model_kwargs={"temperature":0.1,"max_new_tokens":500})
 
-
-
+##Audio Tools
+transcriber = Transcriber()
 
 
 
@@ -44,32 +44,27 @@ def change_option():
     
 
 
-option = st.radio(
-    label='Select an Option',
-    options=input_options,
-    key='input_option',
-    on_change=change_option,
-    horizontal=True
-    )
-
-
-###Loading
-
+with input_container.container():
+    option = st.radio(
+        label='Select an Option',
+        options=input_options,
+        key='input_option',
+        on_change=change_option,
+        horizontal=True
+        )
 
 
 
 
 
-
-
-transcriber = Transcriber()
 
 #Upload Audio File
 if  option == input_options[0]:
-    audio_file = st.file_uploader("Choose a file",type=['wav','mp3','ogg'])
-    if audio_file:
-        file_type = audio_file.type.split('/')[1]
-        transcriber.transcribe_free(audio_file,'audio.'+file_type,input_type='file')
+    with input_container.container():
+        audio_file = st.file_uploader("Choose a file",type=['wav','mp3','ogg'])
+        if audio_file:
+            file_type = audio_file.type.split('/')[1]
+            transcriber.transcribe_free(audio_file,'audio.'+file_type,input_type='file')
 
        
         
@@ -77,19 +72,20 @@ if  option == input_options[0]:
 
 #Record Audio
 elif option == input_options[1]:  
-    audio_bytes = audio_recorder(
-        text="Click to Record",
-        recording_color="#28B463",
-        neutral_color="#E74C3C",
-        icon_name="microphone",
-        icon_size="3x",
-        pause_threshold=300.0,
+    with input_container.container():
+        audio_bytes = audio_recorder(
+            text="Click to Record",
+            recording_color="#28B463",
+            neutral_color="#E74C3C",
+            icon_name="microphone",
+            icon_size="3x",
+            pause_threshold=300.0,
 
-    )
-    if audio_bytes:
-        with input_container.container():
-            st.audio(audio_bytes)
-        transcriber.transcribe_free(audio_bytes,'audio.wav',input_type='record')
+        )
+        if audio_bytes:
+            with input_container.container():
+                st.audio(audio_bytes)
+            transcriber.transcribe_free(audio_bytes,'audio.wav',input_type='record')
         
 
     
@@ -97,4 +93,5 @@ elif option == input_options[1]:
 
 #Youtube Url Input
 else:
-    youtube_url = input_container.text_input("Enter Youtube url",key='youtube_url')
+    with input_container.container():
+        youtube_url = st.text_input("Enter Youtube url",key='youtube_url')

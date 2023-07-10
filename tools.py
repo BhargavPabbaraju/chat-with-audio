@@ -12,26 +12,20 @@ class Transcriber:
     '''
     def __init__(self,type='free'):
         self.type = type
-        self.loading_text = st.empty()
-    
-    def loading(self,message):
-        with self.loading_text.container():
-            st.write(message)
-
-    def clear_loading_message(self):
-        self.loading_text.empty()
-
+        
     
     def transcribe_free(self,data,file_name,input_type='file'):
+        self.loading_text = st.empty()
         try:
-            self.loading('Speech Processing In Progress...Please Wait...')
+            with self.loading_text.container():
+                st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
             text = audio_processor.transcribe_free(data,file_name,input_type)
-            st.write('Transcribed Text:')
-            st.write(f'**{text}**')
+            st.markdown(f':blue[Transcribed Text:]')
+            st.markdown(f':green[**{text}**]')
             
         except ValueError as e:
-            st.write(e)
+            st.markdown(f':red[{e}]')
         except ConnectionError as e:
-            st.write(e)
+            st.markdown(f':red[{e}]')
         finally:
-            self.clear_loading_message()
+            self.loading_text.empty()
