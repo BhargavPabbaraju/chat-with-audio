@@ -4,6 +4,7 @@ import streamlit as st
 
 from audio_processing import AudioProcessor,format_time
 
+
 audio_processor = AudioProcessor()
 
 
@@ -19,6 +20,13 @@ class Transcriber:
         self.container = container
         self.got_input = False
         self.processing = False
+
+    @st.cache_data(hash_funcs={st.delta_generator.DeltaGenerator: lambda x: None},show_spinner='Transcribing Audio...')
+    def get_generator(_self,data,file_name,input_type,language):
+        audio = audio_processor.convert_audio(data,file_name,input_type)
+        text_generator = audio_processor.transcribe_free(audio,language)
+        return tuple(text_generator)
+
         
     
     def transcribe_free(self,data,file_name,input_type=FileType.FILE,language=Language.USENGLISH):
@@ -32,16 +40,16 @@ class Transcriber:
             language(Language,optional): The language the transcribed text should be in. Defaults to US English.
         '''
         self.loading_text = self.container.empty()
-        full_text = ""
+        self.full_text = ""
         try:
             with self.loading_text.container():
                 st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
                     
             self.got_input  = True
             self.processing = True
-            audio = audio_processor.convert_audio(data,file_name,input_type)
-            text_generator = audio_processor.transcribe_free(audio,language)
+            
             self.container.markdown(f':blue[Transcribed Text:]')
+            text_generator = self.get_generator(data,file_name,input_type,language)
             for result in text_generator:
                 self.loading_text.empty()
                 with self.loading_text.container():
@@ -51,7 +59,7 @@ class Transcriber:
                 text = result['text']
                 if text:
                     self.container.markdown(f':green[**{text}**]')
-                    full_text+=text
+                    self.full_text+=text
                 else:
                     self.container.markdown(f':red[**Could not transcribe audio from {chunk}**]')
             
@@ -66,17 +74,6 @@ class Transcriber:
 
 
 
-class PromptProcessor:
-    def __init__(self,transcriber,container):
-        self.transcriber = transcriber
-        self.container = container
-    
-
-    def validate_prompt(self,prompt):
-        if not self.transcriber.got_input:
-            return 'Please provide input first.'
-        if self.transcriber.got_input and self.transcriber.processing:
-            return 'Please wait till the whole audio is transcribed.'
 
 
 

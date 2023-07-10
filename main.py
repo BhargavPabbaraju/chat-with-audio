@@ -1,35 +1,15 @@
 
 import logging
 
-from langchain.llms import OpenAI,HuggingFaceHub
-from langchain import PromptTemplate
-from langchain.chains import LLMChain,SequentialChain
-
 
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
-from tools import Transcriber,PromptProcessor
+from speech_tools import Transcriber
+from query_handler import LLMQueryHandler
 
 from constants import FileType
-
-
-###Loading API Keys
-import os
-from dotenv import load_dotenv,find_dotenv
-
-
-load_dotenv(find_dotenv())
-HUGGINGFACEHUB_API_TOKEN = os.environ["HUGGINGFACEHUB_API_TOKEN"]
-
-
-#LLMS
-repo_id = 'tiiuae/falcon-7b-instruct'
-falcon_llm = HuggingFaceHub(
-    repo_id=repo_id,
-    model_kwargs={"temperature":0.1,"max_new_tokens":500},
-    )
 
 
 
@@ -39,6 +19,16 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     )
+
+@st.cache_resource(show_spinner="Loading embeddings..May take several minutes...")
+def query_handler_object():
+    return LLMQueryHandler()
+
+query_handler = query_handler_object()
+
+
+
+
 
 
 #streamlit framework 
@@ -51,7 +41,6 @@ transcribe_col,chat_col = st.columns(2)
 
 ##Audio Tools
 transcriber = Transcriber(transcribe_col)
-prompt_processor = PromptProcessor(transcriber,chat_col)
 
 ###Input Options
 input_options = ['Load Audio File','Record Audio','Youtube URL']
@@ -74,9 +63,12 @@ with input_container.container():
         on_change=change_option,
         horizontal=True
         )
+    
 
 
-
+@st.cache_data(show_spinner="Converting Speech to Text...")
+def transcribe(data,file_name,input_type):
+    transcriber.transcribe_free(data,file_name,input_type)
 
 
 
@@ -107,6 +99,8 @@ elif option == input_options[1]:
         if audio_bytes:
             with input_container.container():
                 st.audio(audio_bytes)
+            
+           
             transcriber.transcribe_free(audio_bytes,'audio.wav',input_type=FileType.RECORD)
         
 
@@ -132,12 +126,16 @@ with chat_col:
 
     
 if transcriber.got_input and not transcriber.processing:
+    query_handler.load_text(transcriber.full_text)
     if prompt:= st.chat_input("Say something"):
         with chat_col.chat_message("user"):
             st.markdown(prompt)
             st.session_state.messages.append({"role": "user", "content": prompt})
         
-        reply = prompt_processor.validate_prompt(prompt)
+        try:
+            reply = query_handler.query(prompt)
+        except ConnectionError:
+            reply = ':red[Failed to Connect]'
         with chat_col.chat_message("bot"):
             st.markdown(reply)
             st.session_state.messages.append({"role": "bot", "content": reply})

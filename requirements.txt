@@ -1,9 +1,13 @@
-langchain
-openai
-huggingface_hub
 python-dotenv
 streamlit
 audio_recorder_streamlit
 SpeechRecognition
 pydub
 logging
+huggingface_hub
+langchain
+torch
+InstructorEmbedding
+sentence_transformers
+transformers
+faiss-cpu
