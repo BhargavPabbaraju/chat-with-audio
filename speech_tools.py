@@ -29,7 +29,7 @@ class Transcriber:
 
         
     
-    def transcribe_free(self,data,file_name,input_type=FileType.FILE,language=Language.USENGLISH):
+    def transcribe_free(_self,data,file_name,input_type=FileType.FILE,language=Language.USENGLISH):
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 
@@ -39,39 +39,39 @@ class Transcriber:
             input_type(FileType,optional): Whether the audio is from a file or from the microphone. Deafaults to File Input.
             language(Language,optional): The language the transcribed text should be in. Defaults to US English.
         '''
-        self.loading_text = self.container.empty()
-        self.full_text = ""
+        _self.loading_text = _self.container.empty()
+        _self.full_text = ""
         try:
-            with self.loading_text.container():
+            with _self.loading_text.container():
                 st.markdown(f':blue[Speech Processing In Progress...Please Wait...]')
                     
-            self.got_input  = True
-            self.processing = True
+            _self.got_input  = True
+            _self.processing = True
             
-            self.container.markdown(f':blue[Transcribed Text:]')
-            text_generator = self.get_generator(data,file_name,input_type,language)
+            _self.container.markdown(f':blue[Transcribed Text:]')
+            text_generator = _self.get_generator(data,file_name,input_type,language)
             with open('text.txt','w') as f:
                 for result in text_generator:
-                    self.loading_text.empty()
-                    with self.loading_text.container():
+                    _self.loading_text.empty()
+                    with _self.loading_text.container():
                         chunk = format_time(result["start_time"]) + ' to ' + format_time(result["end_time"])
                         st.markdown(f':blue[Processing {chunk}]')
 
                     text = result['text']
                     if text:
-                        self.container.markdown(f':green[**{text}**]')
-                        self.full_text+=text
+                        _self.container.markdown(f':green[**{text}**]')
+                        _self.full_text+=text
                         f.write(text)
                     else:
-                        self.container.markdown(f':red[**Could not transcribe audio from {chunk}**]')
+                        _self.container.markdown(f':red[**Could not transcribe audio from {chunk}**]')
             
         except ValueError as e:
-            self.container.markdown(f':red[{e}]')
+            _self.container.markdown(f':red[{e}]')
         except ConnectionError as e:
-            self.container.markdown(f':red[{e}]')
+            _self.container.markdown(f':red[{e}]')
         finally:
-            self.loading_text.empty()
-            self.processing = False
+            _self.loading_text.empty()
+            _self.processing = False
 
 
 

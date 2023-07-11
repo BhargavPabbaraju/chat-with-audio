@@ -66,11 +66,12 @@ with input_container.container():
     
 
 
-@st.cache_data(show_spinner="Converting Speech to Text...")
-def transcribe(data,file_name,input_type):
-    transcriber.transcribe_free(data,file_name,input_type)
 
 
+@chat_col.cache_resource(show_spinner="Connecting to LLM...")
+def load_text(text):
+    st.session_state.messages = []
+    query_handler.load_text(text)
 
 #Upload Audio File
 if  option == input_options[0]:
@@ -126,7 +127,7 @@ with chat_col:
 
     
 if transcriber.got_input and not transcriber.processing:
-    query_handler.load_text(transcriber.full_text)
+    load_text(transcriber.full_text)
     if prompt:= st.chat_input("Say something"):
         with chat_col.chat_message("user"):
             st.markdown(prompt)

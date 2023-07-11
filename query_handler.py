@@ -5,7 +5,7 @@ from langchain.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain import HuggingFaceHub,PromptTemplate
 from langchain.embeddings import HuggingFaceInstructEmbeddings
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 
 
 import logging
@@ -48,17 +48,23 @@ class LLMQueryHandler:
         You are provided transcribed text of an audio file. Answer questions based on it. 
         If you do not know the answer just say you don't know. Do not make up an answer.
         If you did not understand the question, say that you did not understand the question.
+        Context:{context}
+
+        Question:{question}
+        
+        Answer:
         """
         
       
        
         self.prompt_template = PromptTemplate.from_template(template_string)
-        self.memory = ConversationBufferMemory(memory_key="chat_history",return_messages=True)
-        self.memory.save_context({"input":template_string},{"output":"Sure , give me a question"})
+        self.memory = ConversationBufferWindowMemory(k=2,memory_key="chat_history",return_messages=True)
+        #self.memory.save_context({"input":template_string},{"output":"Sure , give me a question"})
 
+    
     def load_text(self,text,chain_type='stuff'):
         
-        
+        full_text = text # Unused but required for caching
         loader = TextLoader('text.txt')
         docs = loader.load()
 
@@ -74,7 +80,8 @@ class LLMQueryHandler:
             return_source_documents=False,
             memory = self.memory,
             chain_type=chain_type,
-            verbose=True,
+            verbose=False,
+            combine_docs_chain_kwargs={"prompt": self.prompt_template}
             )
 
     
