@@ -56,7 +56,10 @@ class Transcriber:
         else:
             self.data = data
             self.full_text = ""
-
+            
+        self.got_input = False
+        self.processing = False
+        
         self.loading_text = self.container.empty()
         
         try:
