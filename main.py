@@ -8,7 +8,7 @@ from audio_recorder_streamlit import audio_recorder
 from speech_tools.transcriber import Transcriber
 from query_handler.llm_query_handler import LLMQueryHandler
 
-from utils.constants import FileType
+from utils.constants import FileType, Language
 
 
 logging.basicConfig(
@@ -69,6 +69,15 @@ def load_text(text):
     query_handler.load_text(text)
 
 
+with input_container.container():
+    language = st.selectbox(
+        label='Select Language',
+        options=[lang for lang in Language],
+        format_func=lambda x: str(x).split('.')[1],
+    )
+
+language = 'te-IN'
+
 # Upload Audio File
 if option == input_options[0]:
     with input_container.container():
@@ -81,7 +90,8 @@ if option == input_options[0]:
                     transcriber.transcribe_free(
                         audio_file,
                         'audio.'+file_type,
-                        input_type=FileType.FILE
+                        input_type=FileType.FILE,
+                        language=language
                     )
 
 
@@ -106,7 +116,8 @@ elif option == input_options[1]:
                     transcriber.transcribe_free(
                         audio_bytes,
                         'audio.wav',
-                        input_type=FileType.RECORD
+                        input_type=FileType.RECORD,
+                        language=language
                     )
 
 

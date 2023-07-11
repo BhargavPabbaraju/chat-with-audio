@@ -51,6 +51,7 @@ class Transcriber:
         '''
 
         if self.data == data:
+            self.container.markdown(f':green[**{self.full_text}**]')
             return self.full_text
         else:
             self.data = data

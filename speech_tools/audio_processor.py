@@ -50,6 +50,7 @@ class AudioProcessor:
 
         '''
         logging.debug('Entered the get_chunks function')
+        logging.debug(f'File_name: {file_name} , Input Type: {input_type}')
         with open(f'outputs/{file_name}', "wb") as f:
             if input_type == FileType.RECORD:
                 f.write(data)
