@@ -11,4 +11,3 @@ InstructorEmbedding
 sentence_transformers
 transformers
 faiss-cpu
-unstructured
