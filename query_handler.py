@@ -51,7 +51,7 @@ class LLMQueryHandler:
         Context:{context}
 
         Question:{question}
-        
+
         Answer:
         """
         
@@ -64,7 +64,10 @@ class LLMQueryHandler:
     
     def load_text(self,text,chain_type='stuff'):
         
-        full_text = text # Unused but required for caching
+        with open('text.txt','w') as f:
+            f.write(text)
+
+        
         loader = TextLoader('text.txt')
         docs = loader.load()
 

@@ -24,6 +24,10 @@ logging.basicConfig(
 def query_handler_object():
     return LLMQueryHandler()
 
+@st.cache_resource(show_spinner=False)
+def transcriber_object():
+    return Transcriber()
+
 query_handler = query_handler_object()
 
 
@@ -40,7 +44,8 @@ transcribe_col,chat_col = st.columns(2)
 
 
 ##Audio Tools
-transcriber = Transcriber(transcribe_col)
+transcriber = transcriber_object() 
+transcriber.set_container(transcribe_col)
 
 ###Input Options
 input_options = ['Load Audio File','Record Audio','Youtube URL']
@@ -66,12 +71,13 @@ with input_container.container():
     
 
 
-
-
-@chat_col.cache_resource(show_spinner="Connecting to LLM...")
+@st.cache_resource(show_spinner=False)
 def load_text(text):
-    st.session_state.messages = []
+    #st.session_state.messages = []
+    if len(text)==0:
+        raise ValueError("Transcribed Text is Empty")
     query_handler.load_text(text)
+        
 
 #Upload Audio File
 if  option == input_options[0]:
@@ -79,7 +85,14 @@ if  option == input_options[0]:
         audio_file = st.file_uploader("Choose a file",type=['wav','mp3','ogg'])
         if audio_file:
             file_type = audio_file.type.split('/')[1]
-            transcriber.transcribe_free(audio_file,'audio.'+file_type,input_type=FileType.FILE)
+            with transcribe_col:
+                with st.spinner('Transcribing Audio...'):
+                    transcriber.transcribe_free(
+                                                audio_file,
+                                                'audio.'+file_type,
+                                                input_type=FileType.FILE
+                                                )
+            
 
        
         
@@ -101,8 +114,13 @@ elif option == input_options[1]:
             with input_container.container():
                 st.audio(audio_bytes)
             
-           
-            transcriber.transcribe_free(audio_bytes,'audio.wav',input_type=FileType.RECORD)
+            with transcribe_col:
+                with st.spinner('Transcribing Audio...'):
+                    transcriber.transcribe_free(
+                                                audio_bytes,
+                                                'audio.wav',
+                                                input_type=FileType.RECORD
+                                                )
         
 
     
@@ -125,20 +143,33 @@ with chat_col:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+
+
     
 if transcriber.got_input and not transcriber.processing:
-    load_text(transcriber.full_text)
-    if prompt:= st.chat_input("Say something"):
-        with chat_col.chat_message("user"):
-            st.markdown(prompt)
-            st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        try:
-            reply = query_handler.query(prompt)
-        except ConnectionError:
-            reply = ':red[Failed to Connect]'
-        with chat_col.chat_message("bot"):
-            st.markdown(reply)
-            st.session_state.messages.append({"role": "bot", "content": reply})
+    process_prompt = False
+    with chat_col:
+        with st.spinner('Connting To LLM'):
+            text = transcriber.get_text()
+            logging.debug('Transcribed Text is'+text)
+            try:
+                load_text(text)
+                process_prompt = True
+            except ValueError as e:
+                chat_col.markdown(f":red[{e}]")
+
+    if process_prompt and (prompt:= st.chat_input("Say something")):
+            with chat_col.chat_message("user"):
+                st.markdown(prompt)
+                st.session_state.messages.append({"role": "user", "content": prompt})
+            
+            try:
+                reply = query_handler.query(prompt)
+            except ConnectionError:
+                reply = ':red[Failed to Connect]'
+            with chat_col.chat_message("bot"):
+                st.markdown(reply)
+                st.session_state.messages.append({"role": "bot", "content": reply})
+
 
 
