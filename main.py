@@ -1,60 +1,54 @@
 
 import logging
 
-from langchain.llms import OpenAI,HuggingFaceHub
-from langchain import PromptTemplate
-from langchain.chains import LLMChain,SequentialChain
-
-
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
 from speech_tools import Transcriber
+from query_handler import LLMQueryHandler
 
 from constants import FileType
 
-
-###Loading API Keys
-import os
-from dotenv import load_dotenv,find_dotenv
-
-
-load_dotenv(find_dotenv())
-HUGGINGFACEHUB_API_TOKEN = os.environ["HUGGINGFACEHUB_API_TOKEN"]
-
-
-#LLMS
-repo_id = 'tiiuae/falcon-7b-instruct'
-falcon_llm = HuggingFaceHub(
-    repo_id=repo_id,
-    model_kwargs={"temperature":0.1,"max_new_tokens":500},
-    )
-
-##Audio Tools
-transcriber = Transcriber()
 
 logging.basicConfig(
     filename='debug.log',
     filemode="w",
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    )
+)
 
 
-#streamlit framework 
+@st.cache_resource(show_spinner="Loading embeddings..May take several minutes...")
+def query_handler_object():
+    return LLMQueryHandler()
+
+
+@st.cache_resource(show_spinner=False)
+def transcriber_object():
+    return Transcriber()
+
+
+query_handler = query_handler_object()
+
+
+# streamlit framework
 st.title('Chat With Audio')
-
-
-
-###Input Options
-input_options = ['Load Audio File','Record Audio','Youtube URL']
 input_container = st.container()
+transcribe_col, chat_col = st.columns(2)
+
+
+# Audio Tools
+transcriber = transcriber_object()
+transcriber.set_container(transcribe_col)
+
+# Input Options
+input_options = ['Load Audio File', 'Record Audio', 'Youtube URL']
+
 
 def change_option():
     global option
     option = st.session_state.input_option
-    
 
 
 with input_container.container():
@@ -64,27 +58,35 @@ with input_container.container():
         key='input_option',
         on_change=change_option,
         horizontal=True
-        )
+    )
 
 
+@st.cache_resource(show_spinner=False)
+def load_text(text):
+    st.session_state.messages = []
+    if len(text) == 0:
+        raise ValueError("Transcribed Text is Empty")
+    query_handler.load_text(text)
 
 
-
-
-#Upload Audio File
-if  option == input_options[0]:
+# Upload Audio File
+if option == input_options[0]:
     with input_container.container():
-        audio_file = st.file_uploader("Choose a file",type=['wav','mp3','ogg'])
+        audio_file = st.file_uploader(
+            "Choose a file", type=['wav', 'mp3', 'ogg'])
         if audio_file:
             file_type = audio_file.type.split('/')[1]
-            transcriber.transcribe_free(audio_file,'audio.'+file_type,input_type=FileType.FILE)
+            with transcribe_col:
+                with st.spinner('Transcribing Audio...'):
+                    transcriber.transcribe_free(
+                        audio_file,
+                        'audio.'+file_type,
+                        input_type=FileType.FILE
+                    )
 
-       
-        
-       
 
-#Record Audio
-elif option == input_options[1]:  
+# Record Audio
+elif option == input_options[1]:
     with input_container.container():
         audio_bytes = audio_recorder(
             text="Click to Record",
@@ -98,13 +100,56 @@ elif option == input_options[1]:
         if audio_bytes:
             with input_container.container():
                 st.audio(audio_bytes)
-            transcriber.transcribe_free(audio_bytes,'audio.wav',input_type=FileType.RECORD)
-        
 
-    
+            with transcribe_col:
+                with st.spinner('Transcribing Audio...'):
+                    transcriber.transcribe_free(
+                        audio_bytes,
+                        'audio.wav',
+                        input_type=FileType.RECORD
+                    )
 
 
-#Youtube Url Input
+# Youtube Url Input
 else:
     with input_container.container():
-        youtube_url = st.text_input("Enter Youtube url",key='youtube_url')
+        youtube_url = st.text_input("Enter Youtube url", key='youtube_url')
+
+
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+# Display chat messages from history on app rerun
+with chat_col:
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+
+if transcriber.got_input and not transcriber.processing:
+    process_prompt = False
+    with chat_col:
+        with st.spinner('Connting To LLM'):
+            text = transcriber.get_text()
+            logging.debug('Transcribed Text is'+text)
+            try:
+                load_text(text)
+                process_prompt = True
+            except ValueError as e:
+                chat_col.markdown(f":red[{e}]")
+
+    if process_prompt and (prompt := st.chat_input("Say something")):
+        with chat_col.chat_message("user"):
+            st.markdown(prompt)
+            st.session_state.messages.append(
+                {"role": "user", "content": prompt})
+
+        try:
+            reply = query_handler.query(prompt)
+        except ConnectionError:
+            reply = ':red[Failed to Connect]'
+        with chat_col.chat_message("bot"):
+            st.markdown(reply)
+            st.session_state.messages.append({"role": "bot", "content": reply})

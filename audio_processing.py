@@ -1,6 +1,8 @@
 from constants import FileType,Language
 from math import ceil
 
+from datetime import timedelta
+
 import os
 
 
@@ -17,6 +19,19 @@ AudioSegment.ffprobe = 'fforobe.exe'
 recognizer = sr.Recognizer()
 
 
+def format_time(millis):
+    '''
+    Formats time from milliseconds to HH:MM:SS
+
+    Args:
+        millis(int):   Time in milliseconds
+    Returns:
+        time(str):  Time formatted as HH:MM:SS
+
+    '''
+    return str(timedelta(seconds=millis/1000))
+
+
 class AudioProcessor:
     def __init__(self):
         self.chunks = None
@@ -31,7 +46,7 @@ class AudioProcessor:
             input_type(FileType,optional): Whether the audio is from a file or from the microphone. Deafaults to File Input.
         
         Returns:
-            audio(list):audio converted into wav format ready to be transcribed by Google Speech Recognition API
+            audios(list): List of chunks converted into wav format ready to be transcribed by Google Speech Recognition API
         
         '''
         logging.debug('Entered the get_chunks function')
@@ -42,17 +57,14 @@ class AudioProcessor:
                 f.write(data.getbuffer())
         
         logging.info('Input Audio saved as '+file_name)
-        
         try:
             audio = AudioSegment.from_file(file_name)
             return audio
-        
         except:
             logging.exception('Could not load input')
             raise ValueError('Could not load input')
-    
+            
 
-     
 
   
 
@@ -62,7 +74,7 @@ class AudioProcessor:
         Returns the transcribed text from audio using Google Speech Recognition API
 
         Args:
-            audio():   audio converted into wav format ready to be transcribed by Google Speech Recognition API
+            audios(list): List of chunks converted into wav format ready to be transcribed by Google Speech Recognition API
             language(Language,optional): The language the transcribed text should be in. Defaults to US English.
         
         Returns:
@@ -74,6 +86,12 @@ class AudioProcessor:
 
         '''
 
+        chunk_duration = 60 * 1000 #one minute
+        total_duration = len(audio)
+        total_chunks = ceil(total_duration/chunk_duration)
+        logging.info(f'Audio has a total duration of {total_duration/60000} minutes')
+        logging.info(f'Audio split into {total_chunks} chunks')
+        
         
         #Create a folder to save audio chunks
         folder_name = "audio-chunks"
@@ -81,14 +99,7 @@ class AudioProcessor:
             os.mkdir(folder_name)
 
 
-
         chunk_number = 1
-        chunk_duration = 60 * 1000 #one minute
-        total_duration = len(audio)
-
-        logging.info(f'Audio has a total duration of {total_duration/60000} minutes')
-        logging.info(f'Audio split into {ceil(total_duration/chunk_duration)} chunks')
-
         for start_time in range(0,total_duration,chunk_duration):
             end_time = start_time + chunk_duration
             chunk = audio[start_time:end_time]
@@ -98,24 +109,29 @@ class AudioProcessor:
                 format='wav',
                 parameters=["-ac", "1", "-ar", "16000"]
                 )
-            with sr.AudioFile(file_name) as source:
-                file = (recognizer.record(source))
             
+            
+            with sr.AudioFile(file_name) as source:
+                sound = recognizer.record(source)
             try:
-                text =recognizer.recognize_google(file,language=language)
-                yield text
+                text = recognizer.recognize_google(sound,language=language)
+                yield {'start_time':start_time,'end_time':end_time,'text':text}
             except sr.UnknownValueError:
-                yield ""
+                logging.exception(f"Speech Recognizer could not understand the audio from {format_time(start_time)} to {format_time(end_time)}")
+                yield {'start_time':start_time,'end_time':end_time,'text':''}
                 #raise ValueError("Speech Recognizer could not understand the audio")
                 
             except sr.RequestError as e:
-                yield ""
+                logging.exception(f"Could not request results from Google Speech Recognition service;")
+                yield {'start_time':start_time,'end_time':end_time,'text':''}
                 #raise ConnectionError(f"Could not request results from Google Speech Recognition service; {e}")
-        
+
             chunk_number+=1
             logging.info('Saved '+file_name)
+            
       
             
+        
     
        
 

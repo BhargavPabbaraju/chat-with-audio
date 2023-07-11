@@ -33,9 +33,9 @@
 - Audio input and saving - Done
 - SpeechRecognition to transcribe and translate audio - Done
 - Language Testing on 4 languages : Hindi , Telugu , English and Japanese - Done
-- Basic Chat Interface
-- Integrate Falcon and summarize and q/a test
-- Loading circles/text
+- Basic Chat Interface - Done
+- Integrate Falcon and summarize and q/a test - Done
+- Loading circles/text - Done
 - Google Text to Speech APi for text to speech
 - Download Text to Speech file
 - Youtube video loader and run above steps
