@@ -5,7 +5,7 @@ import logging
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
-from speech_tools import Transcriber
+from speech_tools.transcriber import Transcriber
 from query_handler.llm_query_handler import LLMQueryHandler
 
 from utils.constants import FileType

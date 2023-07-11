@@ -60,10 +60,10 @@ class LLMQueryHandler:
 
     def load_text(self, text, chain_type='stuff'):
 
-        with open('text.txt', 'w') as f:
+        with open('outputs/text.txt', 'w') as f:
             f.write(text)
 
-        loader = TextLoader('text.txt')
+        loader = TextLoader('outputs/text.txt')
         docs = loader.load()
 
         texts = self.text_splitter.split_documents(docs)

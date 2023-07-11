@@ -4,7 +4,7 @@ from utils.constants import FileType, Language
 
 import streamlit as st
 
-from speech_tools.audio_processing import AudioProcessor, format_time
+from speech_tools.audio_processor import AudioProcessor, format_time
 
 
 audio_processor = AudioProcessor()
@@ -39,7 +39,7 @@ class Transcriber:
     def get_text(self):
         return self.full_text
 
-    def transcribe_free(self, data, file_name, input_type=FileType.FILE, language=Language.USENGLISH):
+    def transcribe_free(self, data, file_name, input_type=FileType.FILE, language=Language.US_ENGLISH):
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 
