@@ -6,9 +6,9 @@ import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
 from speech_tools import Transcriber
-from query_handler import LLMQueryHandler
+from query_handler.llm_query_handler import LLMQueryHandler
 
-from constants import FileType
+from utils.constants import FileType
 
 
 logging.basicConfig(
