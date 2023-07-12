@@ -8,7 +8,7 @@ from audio_recorder_streamlit import audio_recorder
 from speech_tools.transcriber import Transcriber
 from query_handler.llm_query_handler import LLMQueryHandler
 
-from utils.constants import FileType, Language
+from utils.constants import Language
 
 
 logging.basicConfig(
@@ -49,6 +49,7 @@ input_options = ['Load Audio File', 'Record Audio', 'Youtube URL']
 def change_option():
     global option
     option = st.session_state.input_option
+    transcriber.refresh_docs()
 
 
 with input_container.container():
@@ -61,12 +62,12 @@ with input_container.container():
     )
 
 
-@st.cache_resource(show_spinner=False)
-def load_text(text):
+@st.cache_resource(show_spinner=False, hash_funcs={list: lambda x: ''.join([str(y.page_content) for y in x])})
+def load_text(docs):
     st.session_state.messages = []
-    if len(text) == 0:
+    if len(docs) == 0:
         raise ValueError("Transcribed Text is Empty")
-    query_handler.load_text(text)
+    query_handler.load_text(docs)
 
 
 with input_container.container():
@@ -84,12 +85,13 @@ if option == input_options[0]:
             "Choose a file", type=['wav', 'mp3', 'ogg'])
         if audio_file:
             file_type = audio_file.type.split('/')[1]
+            with open(f'outputs/audio.{file_type}', 'wb') as f:
+                # Get bytes from Uploaded file
+                f.write(audio_file.getvalue())
             with transcribe_col:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
-                        audio_file,
                         'outputs/audio.'+file_type,
-                        input_type=FileType.FILE,
                         language=language
                     )
 
@@ -107,15 +109,16 @@ elif option == input_options[1]:
 
         )
         if audio_bytes:
+            with open('outputs/audio.wav', 'wb') as f:
+                f.write(audio_bytes)
+
             with input_container.container():
                 st.audio(audio_bytes)
 
             with transcribe_col:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
-                        audio_bytes,
                         'outputs/audio.wav',
-                        input_type=FileType.RECORD,
                         language=language
                     )
 
@@ -142,10 +145,10 @@ if transcriber.got_input and not transcriber.processing:
     process_prompt = False
     with chat_col:
         with st.spinner('Connting To LLM'):
-            text = transcriber.get_text()
-            logging.debug('Transcribed Text is'+text)
+            docs = transcriber.get_docs()
+            logging.debug('Transcribed Text is'+transcriber.get_text())
             try:
-                load_text(text)
+                load_text(docs)
                 process_prompt = True
             except ValueError as e:
                 chat_col.markdown(f":red[{e}]")

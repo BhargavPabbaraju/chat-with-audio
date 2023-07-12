@@ -1,5 +1,4 @@
 
-from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
@@ -61,15 +60,9 @@ class LLMQueryHandler:
             k=1, memory_key="chat_history", return_messages=True)
         # self.memory.save_context({"input":template_string},{"output":"Sure , give me a question"})
 
-    def load_text(self, text, chain_type='stuff'):
+    def load_text(self, _docs, chain_type='stuff'):
 
-        with open('outputs/text.txt', 'w') as f:
-            f.write(text)
-
-        loader = TextLoader('outputs/text.txt')
-        docs = loader.load()
-
-        texts = self.text_splitter.split_documents(docs)
+        texts = self.text_splitter.split_documents(_docs)
 
         db = FAISS.from_documents(texts, self.embeddings)
 

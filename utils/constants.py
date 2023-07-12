@@ -13,7 +13,3 @@ class Language(str, Enum):
     TELUGU = "te-IN"
     HINDI = "hi-IN"
     JAPANESE = "ja-JA"
-
-    @classmethod
-    def list_languages(cls):
-        return [(name, value) for name, value in Language.__members__.items()]
