@@ -38,17 +38,20 @@ class LLMQueryHandler:
         logging.debug('Loading Falcon LLM')
         self.falcon_llm = HuggingFaceHub(
             repo_id='tiiuae/falcon-7b-instruct',
-            model_kwargs={"temperature": 0.1, "max_new_tokens": 500}
+            model_kwargs={"temperature": 0.1,
+                          "max_new_tokens": 500, "use_cache": False},
+
         )
         logging.debug('Loaded Falcon LLM')
 
         template_string = """
-        You are an expert at answering questions about audio transcriptions.\
-        You are provided transcribed text of an audio file enclosed in triple backticks. Answer questions based on it.\
+        The transcribed text of an audio file is provided, enclosed withinin triple backticks.\
+        Refer to this transcribed text to answer the following questions.\
+        
         If you do not know the answer just say you don't know. Do not make up an answer.\
         If you did not understand the question, say that you did not understand the question.\
 
-        Transcribed Text: ```{context}```
+        Audio Transcription: ```{context}```
 
         Question:{question}
         """

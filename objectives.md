@@ -36,12 +36,12 @@
 - Basic Chat Interface - Done
 - Integrate Falcon and summarize and q/a test - Done
 - Loading circles/text - Done
-- Google Text to Speech APi for text to speech
-- Download Text to Speech file
+- Breakdown audio into chunks - Done
 - Youtube video loader and run above steps
 - Test multiple language youtube videos
+- Google Text to Speech APi for text to speech
+- Download Text to Speech file
 
-- Breakdown audio into chunks
 - Whisper to transcribe and translate audio
 - Language Testing on 4 languages : Hindi , Telugu , English and Japanese
 - gpt-turbo-3.5 to summarize and ask questions on the transcribed text

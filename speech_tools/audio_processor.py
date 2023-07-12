@@ -52,6 +52,8 @@ class AudioProcessor:
         logging.debug('Entered the get_chunks function')
         logging.debug(f'File_name: {file_name} , Input Type: {input_type}')
         with open(f'outputs/{file_name}', "wb") as f:
+            print(input_type.value, FileType.RECORD,
+                  FileType.RECORD == input_type)
             if input_type == FileType.RECORD:
                 f.write(data)
             else:
@@ -108,7 +110,8 @@ class AudioProcessor:
             with sr.AudioFile(file_name) as source:
                 sound = recognizer.record(source)
             try:
-                text = recognizer.recognize_google(sound, language=language)
+                text = recognizer.recognize_google(
+                    sound, language=str(language.value))
                 yield {'start_time': start_time, 'end_time': end_time, 'text': text}
             except sr.UnknownValueError:
                 logging.exception(

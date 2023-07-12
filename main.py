@@ -76,7 +76,6 @@ with input_container.container():
         format_func=lambda x: str(x).split('.')[1],
     )
 
-language = 'te-IN'
 
 # Upload Audio File
 if option == input_options[0]:
