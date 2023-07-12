@@ -1,6 +1,9 @@
 from utils.constants import FileType, Language
 from math import ceil
 
+from typing import Union
+from streamlit.runtime.uploaded_file_manager import UploadedFile
+
 from datetime import timedelta
 
 import os
@@ -36,28 +39,30 @@ class AudioProcessor:
     def __init__(self):
         self.chunks = None
 
-    def convert_audio(self, data, file_path: str, input_type: FileType = FileType.FILE):
+    def convert_audio(self, file_path: str, input_type: FileType = FileType.FILE, data: Union[bytes, UploadedFile] = None):
         '''
         Split audio into chunks and convert audio from wav/ogg/mp3 into wav for google speech recognition api
 
         Args:
-            data(streamlit.runtime.uploaded_file_manager.UploadedFile or bytes): The audio data from the uploaded file or recorded bytes
+            data(UploadedFile | bytes): The audio data from the uploaded file or recorded bytes
             file_name(str): The audio file path (is one of 'audio.wav','audio.mp3','audio.ogg')
             input_type(FileType,optional): Whether the audio is from a file or from the microphone. Deafaults to File Input.
-
+            is_youtube(bool):   Whether the audio is from youtube
         Returns:
             audios(list): List of chunks converted into wav format ready to be transcribed by Google Speech Recognition API
 
         '''
         logging.debug('Entered the get_chunks function')
         logging.debug(f'File_path: {file_path} , Input Type: {input_type}')
-        with open(file_path, "wb") as f:
-            if input_type == FileType.RECORD:
-                f.write(data)
-            else:
-                f.write(data.getbuffer())
 
-        logging.info(f'Input Audio saved as {file_path}')
+        if input_type != FileType.YOUTUBE:
+            with open(file_path, "wb") as f:
+                if input_type == FileType.RECORD:
+                    f.write(data)
+                else:
+                    f.write(data.getbuffer())
+
+            logging.info(f'Input Audio saved as {file_path}')
         try:
             audio = AudioSegment.from_file(file_path)
             return audio

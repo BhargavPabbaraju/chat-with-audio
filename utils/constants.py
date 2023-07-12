@@ -4,6 +4,7 @@ from enum import Enum
 class FileType(Enum):
     FILE = 0
     RECORD = 1
+    YOUTUBE = 2
 
 
 class Language(str, Enum):

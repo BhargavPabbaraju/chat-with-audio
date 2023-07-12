@@ -15,7 +15,8 @@ audio_processor = AudioProcessor()
     show_spinner=False
 )
 def get_generator(data, file_path, input_type, language):
-    audio = audio_processor.convert_audio(data, file_path, input_type)
+    audio = audio_processor.convert_audio(
+        file_path=file_path, input_type=input_type, data=data)
     text_generator = audio_processor.transcribe_free(audio, language)
     return text_generator
 
