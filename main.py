@@ -88,7 +88,7 @@ if option == input_options[0]:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
                         audio_file,
-                        'audio.'+file_type,
+                        'outputs/audio.'+file_type,
                         input_type=FileType.FILE,
                         language=language
                     )
@@ -114,7 +114,7 @@ elif option == input_options[1]:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
                         audio_bytes,
-                        'audio.wav',
+                        'outputs/audio.wav',
                         input_type=FileType.RECORD,
                         language=language
                     )

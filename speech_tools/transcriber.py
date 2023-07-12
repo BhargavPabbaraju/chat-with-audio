@@ -14,8 +14,8 @@ audio_processor = AudioProcessor()
     hash_funcs={st.delta_generator.DeltaGenerator: lambda x: None},
     show_spinner=False
 )
-def get_generator(data, file_name, input_type, language):
-    audio = audio_processor.convert_audio(data, file_name, input_type)
+def get_generator(data, file_path, input_type, language):
+    audio = audio_processor.convert_audio(data, file_path, input_type)
     text_generator = audio_processor.transcribe_free(audio, language)
     return text_generator
 
@@ -39,7 +39,7 @@ class Transcriber:
     def get_text(self):
         return self.full_text
 
-    def transcribe_free(self, data, file_name, input_type=FileType.FILE, language=Language.US_ENGLISH):
+    def transcribe_free(self, data, file_path, input_type=FileType.FILE, language=Language.US_ENGLISH):
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 
@@ -72,7 +72,7 @@ class Transcriber:
 
             self.container.markdown(f':blue[Transcribed Text:]')
             text_generator = get_generator(
-                data, file_name, input_type, language)
+                data, file_path, input_type, language)
 
             for result in text_generator:
                 self.loading_text.empty()

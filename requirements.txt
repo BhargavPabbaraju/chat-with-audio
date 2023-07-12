@@ -11,3 +11,5 @@ InstructorEmbedding
 sentence_transformers
 transformers
 faiss-cpu
+yt_dlp
+

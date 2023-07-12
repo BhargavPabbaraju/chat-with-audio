@@ -36,7 +36,7 @@ class AudioProcessor:
     def __init__(self):
         self.chunks = None
 
-    def convert_audio(self, data, file_name, input_type=FileType.FILE):
+    def convert_audio(self, data, file_path: str, input_type: FileType = FileType.FILE):
         '''
         Split audio into chunks and convert audio from wav/ogg/mp3 into wav for google speech recognition api
 
@@ -50,18 +50,16 @@ class AudioProcessor:
 
         '''
         logging.debug('Entered the get_chunks function')
-        logging.debug(f'File_name: {file_name} , Input Type: {input_type}')
-        with open(f'outputs/{file_name}', "wb") as f:
-            print(input_type.value, FileType.RECORD,
-                  FileType.RECORD == input_type)
+        logging.debug(f'File_path: {file_path} , Input Type: {input_type}')
+        with open(file_path, "wb") as f:
             if input_type == FileType.RECORD:
                 f.write(data)
             else:
                 f.write(data.getbuffer())
 
-        logging.info('Input Audio saved as '+f'outputs/{file_name}')
+        logging.info(f'Input Audio saved as {file_path}')
         try:
-            audio = AudioSegment.from_file(f'outputs/{file_name}')
+            audio = AudioSegment.from_file(file_path)
             return audio
         except:
             logging.exception('Could not load input')
