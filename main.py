@@ -8,7 +8,7 @@ from audio_recorder_streamlit import audio_recorder
 from speech_tools.transcriber import Transcriber
 from query_handler.llm_query_handler import LLMQueryHandler
 
-from utils.constants import Language
+from utils.constants import Language, FileType
 
 
 logging.basicConfig(
@@ -49,7 +49,6 @@ input_options = ['Load Audio File', 'Record Audio', 'Youtube URL']
 def change_option():
     global option
     option = st.session_state.input_option
-    transcriber.refresh_docs()
 
 
 with input_container.container():
@@ -84,14 +83,16 @@ if option == input_options[0]:
         audio_file = st.file_uploader(
             "Choose a file", type=['wav', 'mp3', 'ogg'])
         if audio_file:
+            # Extract file type from uploaded file
             file_type = audio_file.type.split('/')[1]
-            with open(f'outputs/audio.{file_type}', 'wb') as f:
-                # Get bytes from Uploaded file
-                f.write(audio_file.getvalue())
+
             with transcribe_col:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
-                        'outputs/audio.'+file_type,
+                        # Get bytes from Uploaded file
+                        data=audio_file.getvalue(),
+                        file_path='outputs/audio.'+file_type,
+                        input_type=FileType.FILE,
                         language=language
                     )
 
@@ -109,16 +110,17 @@ elif option == input_options[1]:
 
         )
         if audio_bytes:
-            with open('outputs/audio.wav', 'wb') as f:
-                f.write(audio_bytes)
 
+            # Display the audio so that user can hear it
             with input_container.container():
                 st.audio(audio_bytes)
 
             with transcribe_col:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
-                        'outputs/audio.wav',
+                        data=audio_bytes,
+                        file_path='outputs/audio.wav',
+                        input_type=FileType.RECORD,
                         language=language
                     )
 

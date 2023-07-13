@@ -34,6 +34,7 @@ class Transcriber:
         self.got_input = False
         self.processing = False
         self.docs = []
+        self.data = None
 
     def set_container(self, container):
 
@@ -45,10 +46,7 @@ class Transcriber:
     def get_text(self):
         return '\n'.join([x.page_content for x in self.docs])
 
-    def refresh_docs(self):
-        self.docs = []
-
-    def transcribe_free(self, file_path: str, language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
+    def transcribe_free(self, data, file_path: str, input_type, language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 
@@ -60,15 +58,21 @@ class Transcriber:
             docs: List of transcribed documents as langchain Documents
         '''
 
-        if len(self.docs) > 0:
-            full_text = '\n'.join([x.page_content for x in self.docs])
-            self.container.markdown(f':green[**{full_text}**]')
+        # If same audio data is passed , just return already computed documents
+        if data == self.data:
+            self.container.markdown(f':green[**{self.get_text()}**]')
             return self.docs
+        else:
+            self.data = data
 
         self.got_input = False
         self.processing = False
 
         self.loading_text = self.container.empty()
+
+        if input_type != FileType.YOUTUBE:
+            with open(file_path, 'wb') as f:
+                f.write(data)
 
         try:
             with self.loading_text.container():
@@ -93,12 +97,11 @@ class Transcriber:
                 if text:
                     self.container.markdown(f':green[**{text}**]')
                     logging.debug(f'Transcribed Text of {chunk} : {text}')
+                    self.docs.append(result)
                 else:
                     logging.debug(f'Could not transcribe Text of {chunk}')
                     self.container.markdown(
                         f':red[**Could not transcribe audio from {chunk}**]')
-
-                self.docs.append(result)
 
             return self.docs
 
