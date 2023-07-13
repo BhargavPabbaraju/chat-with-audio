@@ -44,13 +44,13 @@ class LLMQueryHandler:
         logging.debug('Loaded Falcon LLM')
 
         template_string = """
-        The transcribed text of an audio file is provided, enclosed withinin triple backticks.\
+        The transcribed text of an audio/video file is provided, enclosed withinin triple backticks.\
         Refer to this transcribed text to answer the following questions.\
         
         If you do not know the answer just say you don't know. Do not make up an answer.\
         If you did not understand the question, say that you did not understand the question.\
 
-        Audio Transcription: ```{context}```
+        Audio/Video Transcription: ```{context}```
 
         Question:{question}
         """

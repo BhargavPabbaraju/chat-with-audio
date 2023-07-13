@@ -1,6 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional, List, Iterator, Union
+
 import logging
 
-from typing import Optional, List
 from langchain.schema import Document
 
 from utils.constants import FileType, Language
@@ -10,13 +12,19 @@ from yt_dlp.utils import DownloadError
 import streamlit as st
 
 from langchain.document_loaders.generic import GenericLoader
-from langchain.document_loaders.blob_loaders import YoutubeAudioLoader
 
 
-from speech_tools.audio_processing import format_time, AudioLoader, SpeechRecognitionParser
+from speech_tools.audio_processing import format_time, AudioLoader, SpeechRecognitionParser, CustomYoutubeAudioLoader
+
+if TYPE_CHECKING:
+    from streamlit.delta_generator import DeltaGenerator
+    from langchain.document_loaders.blob_loaders import BlobLoader
 
 
-def get_generator(_loader, language):
+def get_generator(_loader: BlobLoader, language: Language = Optional[Language.US_ENGLISH]) -> Iterator[Document]:
+    """
+    Returns a generator yielding documents from a BlobLoader and integrates with SpeechRecognition Parser
+    """
     loader = GenericLoader(_loader, SpeechRecognitionParser(language=language))
     text_generator = loader.lazy_load()
     return text_generator
@@ -34,23 +42,33 @@ class Transcriber:
         self.docs = []
         self.data = None
 
-    def set_container(self, container):
-
+    def set_container(self, container: DeltaGenerator) -> None:
+        """
+        sets the streamlit container to display transcribed text in
+        """
         self.container = container
 
-    def get_docs(self):
+    def get_docs(self) -> list:
         return self.docs
 
-    def get_text(self):
+    def get_text(self) -> str:
+        """
+        returns the full transcribed text over all documents
+        """
         return '\n'.join([x.page_content for x in self.docs])
 
-    def transcribe_free(self, data, file_path: str, input_type, language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
+    def transcribe_free(self,
+                        data: Union[bytes, str],
+                        file_path: str,
+                        input_type: FileType,
+                        language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 
         Args:
-            file_path: The audio file path 
-            input_type: Whether the audio is from a file or from the microphone. Deafaults to File Input.
+            data: The audio data in bytes or youtube url
+            file_path: The file path to save the audio at
+            input_type: Whether the audio is from a file or from the microphone or a youtube url. Deafaults to File Input.
             language: The language the transcribed text should be in. Defaults to US English.
         Returns:
             docs: List of transcribed documents as langchain Documents
@@ -78,7 +96,7 @@ class Transcriber:
             loader = AudioLoader(file_paths=[file_path])
 
         else:
-            loader = YoutubeAudioLoader([data], save_dir=file_path)
+            loader = CustomYoutubeAudioLoader([data], save_dir=file_path)
 
         try:
             with self.loading_text.container():

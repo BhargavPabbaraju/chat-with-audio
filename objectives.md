@@ -5,7 +5,6 @@
 - Both free and OpenAI API Key Systems:
 - Summarize audio
 - Ask questions about audio
-- Convert Transcribed text to audio (multiple languages)
 - Supported Languages List:
 - Support Huge audio files , State size limits
 - Error handling and fallback to Free version
@@ -39,11 +38,11 @@
 - Breakdown audio into chunks - Done
 - Youtube video loader and run above steps - Done
 - Test multiple language youtube videos - Done
+- Remove Ads from Youtube videos - Half Done
+- Disable Chat Input when not needed
 - Display Chunk number
-- Google Text to Speech APi for text to speech
-- Download Text to Speech file
 
-- Whisper to transcribe and translate audio
+- Whisper to transcribe audio
 - Language Testing on 4 languages : Hindi , Telugu , English and Japanese
 - gpt-turbo-3.5 to summarize and ask questions on the transcribed text
 
