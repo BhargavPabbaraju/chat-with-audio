@@ -37,8 +37,9 @@
 - Integrate Falcon and summarize and q/a test - Done
 - Loading circles/text - Done
 - Breakdown audio into chunks - Done
-- Youtube video loader and run above steps
-- Test multiple language youtube videos
+- Youtube video loader and run above steps - Done
+- Test multiple language youtube videos - Done
+- Display Chunk number
 - Google Text to Speech APi for text to speech
 - Download Text to Speech file
 

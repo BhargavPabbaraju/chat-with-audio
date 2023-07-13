@@ -5,21 +5,19 @@ from langchain.schema import Document
 
 from utils.constants import FileType, Language
 
+from yt_dlp.utils import DownloadError
+
 import streamlit as st
 
 from langchain.document_loaders.generic import GenericLoader
+from langchain.document_loaders.blob_loaders import YoutubeAudioLoader
 
 
 from speech_tools.audio_processing import format_time, AudioLoader, SpeechRecognitionParser
 
 
-@st.cache_resource(
-    hash_funcs={st.delta_generator.DeltaGenerator: lambda x: None},
-    show_spinner=False
-)
-def get_generator(file_path, language):
-    loader = GenericLoader(AudioLoader(
-        file_paths=[file_path]), SpeechRecognitionParser(language=language))
+def get_generator(_loader, language):
+    loader = GenericLoader(_loader, SpeechRecognitionParser(language=language))
     text_generator = loader.lazy_load()
     return text_generator
 
@@ -58,6 +56,9 @@ class Transcriber:
             docs: List of transcribed documents as langchain Documents
         '''
 
+        logging.debug(f"Transcribe free method is called with File Path:{file_path} , Input Type:{input_type} and\
+                      Language:{str(language.value)}")
+
         # If same audio data is passed , just return already computed documents
         if data == self.data:
             self.container.markdown(f':green[**{self.get_text()}**]')
@@ -74,6 +75,11 @@ class Transcriber:
             with open(file_path, 'wb') as f:
                 f.write(data)
 
+            loader = AudioLoader(file_paths=[file_path])
+
+        else:
+            loader = YoutubeAudioLoader([data], save_dir=file_path)
+
         try:
             with self.loading_text.container():
                 st.markdown(
@@ -83,7 +89,7 @@ class Transcriber:
             self.processing = True
 
             self.container.markdown(f':blue[Transcribed Text:]')
-            text_generator = get_generator(file_path, language)
+            text_generator = get_generator(loader, language)
 
             self.docs = []
             for result in text_generator:
@@ -109,6 +115,8 @@ class Transcriber:
             self.container.markdown(f':red[{e}]')
         except ConnectionError as e:
             self.container.markdown(f':red[{e}]')
+        except DownloadError as e:
+            self.container.markdown(f':red[Invalid Youtube URL]')
         finally:
             self.loading_text.empty()
             self.processing = False

@@ -36,6 +36,7 @@ query_handler = query_handler_object()
 st.title('Chat With Audio')
 input_container = st.container()
 transcribe_col, chat_col = st.columns(2)
+prompt_container = st.empty()
 
 
 # Audio Tools
@@ -85,7 +86,8 @@ if option == input_options[0]:
         if audio_file:
             # Extract file type from uploaded file
             file_type = audio_file.type.split('/')[1]
-
+            # Clear previous chat history
+            st.session_state.messages = []
             with transcribe_col:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
@@ -114,7 +116,8 @@ elif option == input_options[1]:
             # Display the audio so that user can hear it
             with input_container.container():
                 st.audio(audio_bytes)
-
+            # Clear previous chat history
+            st.session_state.messages = []
             with transcribe_col:
                 with st.spinner('Transcribing Audio...'):
                     transcriber.transcribe_free(
@@ -128,7 +131,17 @@ elif option == input_options[1]:
 # Youtube Url Input
 else:
     with input_container.container():
-        youtube_url = st.text_input("Enter Youtube url", key='youtube_url')
+        if youtube_url := st.text_input("Enter Youtube url", key='youtube_url'):
+            # Clear previous chat history
+            st.session_state.messages = []
+            with transcribe_col:
+                with st.spinner('Transcribing Audio...'):
+                    transcriber.transcribe_free(
+                        data=youtube_url,
+                        file_path='outputs/Youtube',
+                        input_type=FileType.YOUTUBE,
+                        language=language
+                    )
 
 
 # Initialize chat history
@@ -155,16 +168,20 @@ if transcriber.got_input and not transcriber.processing:
             except ValueError as e:
                 chat_col.markdown(f":red[{e}]")
 
-    if process_prompt and (prompt := st.chat_input("Say something")):
-        with chat_col.chat_message("user"):
-            st.markdown(prompt)
-            st.session_state.messages.append(
-                {"role": "user", "content": prompt})
+    with prompt_container.container():
+        if process_prompt and (prompt := st.chat_input("Say something")):
+            with chat_col.chat_message("user"):
+                st.markdown(prompt)
+                st.session_state.messages.append(
+                    {"role": "user", "content": prompt})
 
-        try:
-            reply = query_handler.query(prompt)
-        except ConnectionError:
-            reply = ':red[Failed to Connect]'
-        with chat_col.chat_message("bot"):
-            st.markdown(reply)
-            st.session_state.messages.append({"role": "bot", "content": reply})
+            try:
+                reply = query_handler.query(prompt)
+            except ConnectionError:
+                reply = ':red[Failed to Connect]'
+            with chat_col.chat_message("bot"):
+                st.markdown(reply)
+                st.session_state.messages.append(
+                    {"role": "bot", "content": reply})
+else:
+    prompt_container.empty()
