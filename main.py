@@ -7,7 +7,8 @@ import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
 from speech_tools.transcriber import Transcriber
-from query_handler.huggingface_query_handler import LLMQueryHandler
+from query_handler.huggingface_query_handler import HuggingFaceQueryHandler
+from query_handler.openai_query_handler import OpenAIQueryHandler
 
 
 from utils.constants import Language, FileType
@@ -19,6 +20,28 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
 )
+
+
+@st.cache_resource(show_spinner="Loading embeddings..May take several minutes...")
+def query_handler_object(api_key):
+    if api_key == 'free':
+        return HuggingFaceQueryHandler()
+    else:
+        return OpenAIQueryHandler()
+
+
+@st.cache_resource(show_spinner=False)
+def transcriber_object(api_key):
+    return Transcriber(api_key)
+
+
+@st.cache_resource(show_spinner=False, hash_funcs={list: lambda x: ''.join([str(y.page_content) for y in x])})
+def load_text(docs):
+    st.session_state.messages = []
+    if len(docs) == 0:
+        raise ValueError("Transcribed Text is Empty")
+    query_handler.load_text(docs)
+
 
 st.title('Audio Q&A')
 
@@ -33,7 +56,7 @@ if not st.session_state.api_key:
     st.session_state.api_key = None
     with api_key_container.container():
         st.write('You have the flexibility to choose between two options:')
-        options = ["**Paid Version:** Includes Whisper for transcription and gpt-3.5-turbo for Q&A. Reliable, high-quality results.",
+        options = ["**OpenAI Version:** Includes Whisper for transcription and gpt-3.5-turbo for Q&A. Reliable, high-quality results. Standard rates apply , Please refer to [Open AI Pricing](https://openai.com/pricing) for the pricing.",
                    "**Free Version:** Powered by Falcon-7b and GoogleSpeechRecognition API (free version). Although slower and less predictable, it offers a cost-effective \
                     opportunity to explore audio processing capabilities. Experiment and evaluate its suitability for your needs."]
         for opt in options:
@@ -49,42 +72,15 @@ if not st.session_state.api_key:
             if api_key := st.text_input("OpenAI API Key", type='password', placeholder="Enter OpenAI API Key"):
                 st.session_state.api_key = api_key
                 os.environ["OPENAI_API_KEY"] = api_key
+                st.experimental_rerun()
 
         else:
             st.session_state.api_key = 'free'
+            st.experimental_rerun()
 
-
-@st.cache_resource(show_spinner="Loading embeddings..May take several minutes...")
-def query_handler_object():
-    return LLMQueryHandler()
-
-
-@st.cache_resource(show_spinner=False)
-def transcriber_object():
-    return Transcriber()
-
-
-@st.cache_resource(show_spinner=False, hash_funcs={list: lambda x: ''.join([str(y.page_content) for y in x])})
-def load_text(docs):
-    st.session_state.messages = []
-    if len(docs) == 0:
-        raise ValueError("Transcribed Text is Empty")
-    query_handler.load_text(docs)
-
-
-if st.session_state.api_key == 'free':
-    query_handler = query_handler_object()
-
-
-# streamlit framework
 
 input_container = st.container()
 transcribe_col, chat_col = st.columns(2)
-
-
-# Audio Tools
-transcriber = transcriber_object()
-transcriber.set_container(transcribe_col)
 
 
 # Input Options
@@ -99,6 +95,12 @@ def change_option():
 
 
 if st.session_state.api_key:
+
+    transcriber = transcriber_object(st.session_state.api_key)
+    transcriber.set_container(transcribe_col)
+
+    query_handler = query_handler_object(st.session_state.api_key)
+
     with input_container.container():
         option = st.radio(
             label='Select an Option',
@@ -108,6 +110,7 @@ if st.session_state.api_key:
             horizontal=True
         )
 
+    # Select language
     with input_container.container():
         language = st.selectbox(
             label='Select Language',
@@ -126,7 +129,7 @@ if st.session_state.api_key:
 
                 with transcribe_col:
                     with st.spinner('Transcribing Audio...'):
-                        transcriber.transcribe_free(
+                        transcriber.transcribe(
                             # Get bytes from Uploaded file
                             data=audio_file.getvalue(),
                             file_path='outputs/audio.'+file_type,
@@ -154,7 +157,7 @@ if st.session_state.api_key:
 
                 with transcribe_col:
                     with st.spinner('Transcribing Audio...'):
-                        transcriber.transcribe_free(
+                        transcriber.transcribe(
                             data=audio_bytes,
                             file_path='outputs/audio.wav',
                             input_type=FileType.RECORD,
@@ -168,7 +171,7 @@ if st.session_state.api_key:
 
                 with transcribe_col:
                     with st.spinner('Transcribing Audio...'):
-                        transcriber.transcribe_free(
+                        transcriber.transcribe(
                             data=youtube_url,
                             file_path='outputs/Youtube',
                             input_type=FileType.YOUTUBE,

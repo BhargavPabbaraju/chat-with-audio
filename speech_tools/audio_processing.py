@@ -44,10 +44,13 @@ def format_time(millis: int) -> str:
 
 
 class WhisperParser(BaseBlobParser):
-    def __init__(self, save_dir: Optional[str], api_key: Optional[str] = None) -> None:
+    def __init__(self, api_key: str, save_dir: str, language: Optional[Language] = Language.US_ENGLISH) -> None:
         self.api_key = api_key
         # Directory to save the chunks in
         self.save_dir = save_dir
+        self.language = language
+        self.api_key = api_key
+        os.environ["OPENAI_API_KEY"] = api_key
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         # Set the API key if provided
@@ -78,7 +81,9 @@ class WhisperParser(BaseBlobParser):
 
             # Transcribe
             logging.debug(f"Transcribing part {split_number+1}!")
-            transcript = openai.Audio.transcribe("whisper-1", file_obj)
+            transcript = openai.Audio.transcribe("whisper-1",
+                                                 file_obj,
+                                                 prompt=f"Transcribe this audio in the following language:{self.language.name}")
 
             yield Document(
                 page_content=transcript.text,

@@ -13,19 +13,25 @@ import streamlit as st
 
 from langchain.document_loaders.generic import GenericLoader
 
+from openai.error import AuthenticationError, APIConnectionError
 
-from speech_tools.audio_processing import format_time, AudioLoader, SpeechRecognitionParser, CustomYoutubeAudioLoader
+
+from speech_tools.audio_processing import format_time, AudioLoader,\
+    SpeechRecognitionParser, CustomYoutubeAudioLoader, WhisperParser
 
 if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator
     from langchain.document_loaders.blob_loaders import BlobLoader
 
 
-def get_generator(_loader: BlobLoader, language: Language = Optional[Language.US_ENGLISH]) -> Iterator[Document]:
+def get_generator(_loader: BlobLoader, language: Language = Optional[Language.US_ENGLISH], api_key: Optional[str] = "free") -> Iterator[Document]:
     """
     Returns a generator yielding documents from a BlobLoader and integrates with SpeechRecognition Parser
     """
-    loader = GenericLoader(_loader, SpeechRecognitionParser(language=language))
+
+    parser = SpeechRecognitionParser(
+        language=language) if api_key == 'free' else WhisperParser(api_key=api_key, save_dir='audio-chunks/', language=language)
+    loader = GenericLoader(_loader, parser)
     text_generator = loader.lazy_load()
     return text_generator
 
@@ -35,12 +41,13 @@ class Transcriber:
         Transcribes speech to text , either using the GoogleSpeechRecognitionAPI or Whisper API
     '''
 
-    def __init__(self, type='free'):
+    def __init__(self, api_key: Optional[str] = 'free'):
         self.type = type
         self.got_input = False
         self.processing = False
         self.docs = []
         self.data = None
+        self.api_key = api_key
 
     def set_container(self, container: DeltaGenerator) -> None:
         """
@@ -57,11 +64,11 @@ class Transcriber:
         """
         return '\n'.join([x.page_content for x in self.docs])
 
-    def transcribe_free(self,
-                        data: Union[bytes, str],
-                        file_path: str,
-                        input_type: FileType,
-                        language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
+    def transcribe(self,
+                   data: Union[bytes, str],
+                   file_path: str,
+                   input_type: FileType,
+                   language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 
@@ -107,7 +114,7 @@ class Transcriber:
             self.processing = True
 
             self.container.markdown(f':blue[Transcribed Text:]')
-            text_generator = get_generator(loader, language)
+            text_generator = get_generator(loader, language, self.api_key)
 
             self.docs = []
             for result in text_generator:
@@ -140,11 +147,23 @@ class Transcriber:
             return self.docs
 
         except ValueError as e:
+            logging.exception(e)
             self.container.markdown(f':red[{e}]')
         except ConnectionError as e:
+            logging.exception(e)
             self.container.markdown(f':red[{e}]')
         except DownloadError as e:
+            logging.exception(e)
             self.container.markdown(f':red[Invalid Youtube URL]')
+        except AuthenticationError as e:
+            logging.exception(e)
+            self.container.markdown(f':red[Invalid API Key]')
+        except APIConnectionError as e:
+            logging.exception(e)
+            self.container.markdown(f':red[Error communicating with OpenAI]')
+        except Exception as e:
+            logging.exception(e)
+            self.container.markdown(f':red[{e}]')
         finally:
             self.loading_text.empty()
             self.processing = False
