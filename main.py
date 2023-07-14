@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional, List, Union
 
 import logging
 
@@ -14,6 +16,9 @@ from query_handler.openai_query_handler import OpenAIQueryHandler
 from utils.constants import Language, FileType
 from utils.error_handler import openai_error_handler
 
+if TYPE_CHECKING:
+    from langchain.schema import Document
+
 
 logging.basicConfig(
     filename='debug.log',
@@ -24,7 +29,7 @@ logging.basicConfig(
 
 
 @st.cache_resource(show_spinner="Loading embeddings..May take several minutes...")
-def query_handler_object(api_key):
+def query_handler_object(api_key: str) -> Union[HuggingFaceQueryHandler, OpenAIQueryHandler]:
     if api_key == 'free':
         return HuggingFaceQueryHandler()
     else:
@@ -32,12 +37,12 @@ def query_handler_object(api_key):
 
 
 @st.cache_resource(show_spinner=False)
-def transcriber_object(api_key):
+def transcriber_object(api_key: str) -> Transcriber:
     return Transcriber(api_key)
 
 
 @st.cache_resource(show_spinner=False, hash_funcs={list: lambda x: ''.join([str(y.page_content) for y in x])})
-def load_text(docs):
+def load_text(docs: List[Document]) -> None:
     st.session_state.messages = []
     if len(docs) == 0:
         raise ValueError("Transcribed Text is Empty")
