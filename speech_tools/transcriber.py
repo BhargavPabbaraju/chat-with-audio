@@ -24,7 +24,9 @@ if TYPE_CHECKING:
     from langchain.document_loaders.blob_loaders import BlobLoader
 
 
-def get_generator(_loader: BlobLoader, language: Language = Optional[Language.US_ENGLISH], api_key: Optional[str] = "free") -> Iterator[Document]:
+def get_generator(_loader: BlobLoader,
+                   language: Language = Optional[Language.US_English],
+                     api_key: Optional[str] = "free") -> Iterator[Document]:
     """
     Returns a generator yielding documents from a BlobLoader and integrates with SpeechRecognition Parser
     """
@@ -72,7 +74,7 @@ class Transcriber:
                    data: Union[bytes, str],
                    file_path: str,
                    input_type: FileType,
-                   language: Language = Optional[Language.US_ENGLISH]) -> List[Document]:
+                   language: Language = Optional[Language.US_English]) -> List[Document]:
         '''
         Displays the Transcribed text using GoogleSpeechRecognitionAPI , results may be inaccurate.
 

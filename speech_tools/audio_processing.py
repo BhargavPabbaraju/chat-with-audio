@@ -44,7 +44,7 @@ def format_time(millis: int) -> str:
 
 
 class WhisperParser(BaseBlobParser):
-    def __init__(self, api_key: str, save_dir: str, language: Optional[Language] = Language.US_ENGLISH) -> None:
+    def __init__(self, api_key: str, save_dir: str, language: Optional[Language] = Language.US_English) -> None:
         self.api_key = api_key
         # Directory to save the chunks in
         self.save_dir = save_dir
@@ -95,7 +95,7 @@ class WhisperParser(BaseBlobParser):
 
 
 class SpeechRecognitionParser(BaseBlobParser):
-    def __init__(self, language: Optional[Language] = Language.US_ENGLISH,
+    def __init__(self, language: Optional[Language] = Language.US_English,
                  save_dir: Optional[str] = "audio-chunks",
                  converter_path: Optional[str] = 'ffmpeg.exe') -> None:
         """

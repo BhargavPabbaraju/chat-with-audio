@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, List, Union
+
 from abc import ABC, abstractmethod
 
 import logging
@@ -11,6 +14,9 @@ from langchain.chains import RetrievalQA
 
 
 from utils.error_handler import openai_error_handler
+
+if TYPE_CHECKING:
+    from langchain.schema import Document
 
 
 # Abstract class to abstract common methods and attributes of Open Ai and Hugging Face Query handlers
@@ -52,7 +58,10 @@ class AbstractQueryHandler(ABC):
     def load_llm(self):
         pass
 
-    def load_text(self, _docs):
+    def load_text(self, _docs: List[Document]) -> None:
+        """
+        Create Retrieval QA chain from documents list.
+        """
 
         texts = self.text_splitter.split_documents(_docs)
 
@@ -70,9 +79,12 @@ class AbstractQueryHandler(ABC):
             verbose=False,
         )
 
-    def query(self, query, callbacks=[]):
+    def query(self, query: str) -> dict[str, Union[str, bool]]:
         if not self.qa_chain:
-            raise TypeError('Error Loading File')
+            result = {"result": "Couldn't connect to the LLM",
+                      "error_occured": True}
 
-        result = openai_error_handler(self.qa_chain.run, query)
+        else:
+            result = openai_error_handler(self.qa_chain.run, query)
+
         return result['result']

@@ -58,8 +58,8 @@ if not st.session_state.api_key:
     st.session_state.api_key = None
     with api_key_container.container():
         st.write('You have the flexibility to choose between two options:')
-        options = ["**OpenAI Version:** Includes Whisper for transcription and gpt-3.5-turbo for Q&A. Reliable, high-quality results. Standard rates apply , Please refer to [Open AI Pricing](https://openai.com/pricing) for the pricing.",
-                   "**Free Version:** Powered by Falcon-7b and GoogleSpeechRecognition API (free version). Although slower and less predictable, it offers a cost-effective \
+        options = ["**OpenAI Version:** Powered by gpt-3.5-turbo for Q&A. Reliable, high-quality results. Standard rates apply , Please refer to [Open AI Pricing](https://openai.com/pricing) for the pricing.",
+                   "**Free Version:** Powered by Falcon-7b. Although slower and less predictable, it offers a cost-effective \
                     opportunity to explore audio processing capabilities. Experiment and evaluate its suitability for your needs."]
         for opt in options:
             st.markdown('- '+opt)
