@@ -3,7 +3,6 @@ streamlit
 audio_recorder_streamlit
 SpeechRecognition
 pydub
-logging
 huggingface_hub
 langchain
 torch
