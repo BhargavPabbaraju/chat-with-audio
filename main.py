@@ -12,6 +12,7 @@ from query_handler.openai_query_handler import OpenAIQueryHandler
 
 
 from utils.constants import Language, FileType
+from utils.error_handler import openai_error_handler
 
 
 logging.basicConfig(
@@ -40,6 +41,7 @@ def load_text(docs):
     st.session_state.messages = []
     if len(docs) == 0:
         raise ValueError("Transcribed Text is Empty")
+
     query_handler.load_text(docs)
 
 
@@ -99,7 +101,12 @@ if st.session_state.api_key:
     transcriber = transcriber_object(st.session_state.api_key)
     transcriber.set_container(transcribe_col)
 
-    query_handler = query_handler_object(st.session_state.api_key)
+    result = openai_error_handler(
+        query_handler_object, st.session_state.api_key)
+    if result['error_occured']:
+        chat_col.markdown(result['result'])
+    else:
+        query_handler = result['result']
 
     with input_container.container():
         option = st.radio(
@@ -198,11 +205,13 @@ if st.session_state.api_key:
             with st.spinner('Connecting To LLM'):
                 docs = transcriber.get_docs()
                 logging.debug('Transcribed Text is'+transcriber.get_text())
-                try:
-                    load_text(docs)
+                result = openai_error_handler(load_text, docs)
+                if result['error_occured']:
+                    chat_col.markdown(result['result'])
+
+                else:
                     st.session_state.process_prompt = True
-                except ValueError as e:
-                    chat_col.markdown(f":red[{e}]")
+                    load_text(docs)
 
     if st.session_state.process_prompt:
         if prompt := st.chat_input("Ask a question", key='chat_input'):

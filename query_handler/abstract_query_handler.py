@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import logging
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain import PromptTemplate
@@ -7,6 +8,9 @@ from langchain.memory import ConversationBufferWindowMemory
 
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
+
+
+from utils.error_handler import openai_error_handler
 
 
 # Abstract class to abstract common methods and attributes of Open Ai and Hugging Face Query handlers
@@ -70,12 +74,5 @@ class AbstractQueryHandler(ABC):
         if not self.qa_chain:
             raise TypeError('Error Loading File')
 
-        try:
-            result = self.qa_chain.run(query)
-            return result
-        except ConnectionError:
-            return ':red[Failed to Connect]'
-        except ValueError as e:
-            return f':red[{str(e)}]'
-        except Exception as e:
-            return f':red[{str(e)}]'
+        result = openai_error_handler(self.qa_chain.run, query)
+        return result['result']

@@ -29,8 +29,12 @@ def get_generator(_loader: BlobLoader, language: Language = Optional[Language.US
     Returns a generator yielding documents from a BlobLoader and integrates with SpeechRecognition Parser
     """
 
+    # Decided not to use WhisperParser because of high cost and less accurate results for different languages. But is still supported
+    # parser = SpeechRecognitionParser(
+    #   language=language) if api_key == 'free' else WhisperParser(api_key=api_key, save_dir='audio-chunks/', language=language)
+
     parser = SpeechRecognitionParser(
-        language=language) if api_key == 'free' else WhisperParser(api_key=api_key, save_dir='audio-chunks/', language=language)
+        language=language)
     loader = GenericLoader(_loader, parser)
     text_generator = loader.lazy_load()
     return text_generator

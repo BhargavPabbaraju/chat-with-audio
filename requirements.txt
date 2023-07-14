@@ -14,3 +14,4 @@ faiss-cpu
 yt_dlp
 sponsorblock
 openai
+tiktoken
