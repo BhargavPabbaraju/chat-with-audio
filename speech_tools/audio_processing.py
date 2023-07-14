@@ -1,6 +1,9 @@
 
 from typing import Iterable, Iterator, List, Optional
 
+import openai
+import io
+
 from langchain.document_loaders.base import BaseBlobParser
 from langchain.document_loaders.blob_loaders import YoutubeAudioLoader
 from langchain.document_loaders.blob_loaders import Blob, BlobLoader
@@ -38,6 +41,52 @@ def format_time(millis: int) -> str:
 
     '''
     return str(timedelta(seconds=millis/1000))
+
+
+class WhisperParser(BaseBlobParser):
+    def __init__(self, save_dir: Optional[str], api_key: Optional[str] = None) -> None:
+        self.api_key = api_key
+        # Directory to save the chunks in
+        self.save_dir = save_dir
+
+    def lazy_parse(self, blob: Blob) -> Iterator[Document]:
+        # Set the API key if provided
+        if self.api_key:
+            openai.api_key = self.api_key
+
+        # Audio file from disk
+        audio = AudioSegment.from_file(blob.path)
+
+        # Define the duration of each chunk in minutes
+        # Need to meet 25MB size limit for Whisper API
+        chunk_duration = 20
+        chunk_duration_ms = chunk_duration * 60 * 1000
+
+        total_duration = len(audio)
+        total_chunks = ceil(total_duration/chunk_duration)
+
+        # Split the audio into chunk_duration_ms chunks
+        for split_number, start_time in enumerate(range(0, len(audio), chunk_duration_ms)):
+            # Audio chunk
+            end_time = start_time + chunk_duration_ms
+            chunk = audio[start_time: end_time]
+            file_obj = io.BytesIO(chunk.export(format="mp3").read())
+            if blob.source is not None:
+                file_obj.name = f"{self.save_dir}/chunk{split_number}.mp3"
+            else:
+                file_obj.name = f"{self.save_dir}/chunk{split_number}.mp3"
+
+            # Transcribe
+            logging.debug(f"Transcribing part {split_number+1}!")
+            transcript = openai.Audio.transcribe("whisper-1", file_obj)
+
+            yield Document(
+                page_content=transcript.text,
+                metadata={"source": blob.source, "chunk": split_number,
+                          "start_time": start_time, "end_time": end_time,
+                          'error_message': '', 'total_duration': total_duration,
+                          'total_chunks': total_chunks},
+            )
 
 
 class SpeechRecognitionParser(BaseBlobParser):

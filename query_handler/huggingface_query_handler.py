@@ -24,8 +24,8 @@ class LLMQueryHandler:
         self.qa_chain = None
 
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=1500,
+            chunk_overlap=150,
         )
 
         logging.debug('Loading Embeddings')
@@ -45,7 +45,7 @@ class LLMQueryHandler:
         logging.debug('Loaded Falcon LLM')
 
         template_string = """
-        The transcribed text of an audio/video file is provided, enclosed withinin triple backticks.\
+        The transcribed text of an audio/video file is provided, enclosed within triple backticks.\
         Refer to this transcribed text to answer the following question. The answer must be clear and concise.\
 
         If you do not know the answer just say you don't know. Do not make up an answer.\
