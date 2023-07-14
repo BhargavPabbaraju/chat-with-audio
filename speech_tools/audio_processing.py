@@ -96,7 +96,8 @@ class SpeechRecognitionParser(BaseBlobParser):
                 )
 
                 metadata = {'start_time': start_time, 'end_time': end_time,
-                            'source': blob.source, 'chunk': chunk_number, 'error_message': ''}
+                            'source': blob.source, 'chunk': chunk_number, 'error_message': '',
+                            'total_duration': total_duration, 'total_chunks': total_chunks}
 
                 with sr.AudioFile(file_name) as source:
                     sound = self.recognizer.record(source)
@@ -191,7 +192,7 @@ class CustomYoutubeAudioLoader(YoutubeAudioLoader):
                 {
                     'key': 'ModifyChapters',
                     'remove_sponsor_segments': ['sponsor', 'selfpromo', 'interaction', 'intro', 'outro', 'filler'],
-                    'when': 'before_dl'
+
                 }
 
             ],

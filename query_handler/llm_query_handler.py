@@ -1,7 +1,7 @@
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.chains import ConversationalRetrievalChain
+from langchain.chains import RetrievalQA
 from langchain import HuggingFaceHub, PromptTemplate
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.memory import ConversationBufferWindowMemory
@@ -22,6 +22,7 @@ class LLMQueryHandler:
     def __init__(self):
 
         self.qa_chain = None
+
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
@@ -45,20 +46,21 @@ class LLMQueryHandler:
 
         template_string = """
         The transcribed text of an audio/video file is provided, enclosed withinin triple backticks.\
-        Refer to this transcribed text to answer the following questions.\
-        
+        Refer to this transcribed text to answer the following question. The answer must be clear and concise.\
+
         If you do not know the answer just say you don't know. Do not make up an answer.\
         If you did not understand the question, say that you did not understand the question.\
-
+        
         Audio/Video Transcription: ```{context}```
 
         Question:{question}
+
+        Answer:
         """
 
         self.prompt_template = PromptTemplate.from_template(template_string)
         self.memory = ConversationBufferWindowMemory(
             k=1, memory_key="chat_history", return_messages=True)
-        # self.memory.save_context({"input":template_string},{"output":"Sure , give me a question"})
 
     def load_text(self, _docs, chain_type='stuff'):
 
@@ -70,22 +72,24 @@ class LLMQueryHandler:
 
         self.memory.clear()
 
-        self.qa_chain = ConversationalRetrievalChain.from_llm(
+        self.qa_chain = RetrievalQA.from_llm(
             llm=self.falcon_llm,
             retriever=retriever,
-            return_source_documents=False,
             memory=self.memory,
-            chain_type=chain_type,
-            verbose=True,
-            combine_docs_chain_kwargs={"prompt": self.prompt_template}
+            prompt=self.prompt_template,
+            verbose=False,
         )
 
-    def query(self, query):
+    def query(self, query, callbacks=[]):
         if not self.qa_chain:
             raise TypeError('Error Loading File')
 
         try:
-            result = self.qa_chain({"question": query})
-            return result['answer']
+            result = self.qa_chain.run(query)
+            return result
         except ConnectionError:
             return ':red[Failed to Connect]'
+        except ValueError as e:
+            return f':red[{str(e)}]'
+        except Exception as e:
+            return f':red[{str(e)}]'

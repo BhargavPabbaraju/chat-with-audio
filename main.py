@@ -8,6 +8,8 @@ from audio_recorder_streamlit import audio_recorder
 from speech_tools.transcriber import Transcriber
 from query_handler.llm_query_handler import LLMQueryHandler
 
+from langchain.callbacks import StreamlitCallbackHandler
+
 from utils.constants import Language, FileType
 
 
@@ -41,6 +43,7 @@ transcribe_col, chat_col = st.columns(2)
 # Audio Tools
 transcriber = transcriber_object()
 transcriber.set_container(transcribe_col)
+
 
 # Input Options
 input_options = ['Load Audio File', 'Record Audio', 'Youtube URL']
@@ -146,6 +149,10 @@ else:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Initialize whether to process chat input
+if "process_prompt" not in st.session_state:
+    st.session_state.process_prompt = False
+
 
 # Display chat messages from history on app rerun
 with chat_col:
@@ -155,31 +162,37 @@ with chat_col:
 
 
 if transcriber.got_input and not transcriber.processing:
-    process_prompt = False
+    st.session_state.process_prompt = False
     with chat_col:
-        with st.spinner('Connting To LLM'):
+        with st.spinner('Connecting To LLM'):
             docs = transcriber.get_docs()
             logging.debug('Transcribed Text is'+transcriber.get_text())
             try:
                 load_text(docs)
-                process_prompt = True
+                st.session_state.process_prompt = True
             except ValueError as e:
                 chat_col.markdown(f":red[{e}]")
 
-    if process_prompt:
-        reply = 'hi'
-        if prompt := st.chat_input("Say something", key='chat_input', disabled=not reply):
-            with chat_col.chat_message("user"):
-                st.markdown(prompt)
-                st.session_state.messages.append(
-                    {"role": "user", "content": prompt})
 
-            try:
-                reply = None
-                reply = query_handler.query(prompt)
-            except ConnectionError:
-                reply = ':red[Failed to Connect]'
-            with chat_col.chat_message("bot"):
-                st.markdown(reply)
-                st.session_state.messages.append(
-                    {"role": "bot", "content": reply})
+if st.session_state.process_prompt:
+    if prompt := st.chat_input("Ask a question", key='chat_input'):
+        with chat_col.chat_message("user"):
+            st.markdown(prompt)
+            st.session_state.messages.append(
+                {"role": "user", "content": prompt})
+
+        st.session_state.process_prompt = False
+
+        with chat_col:
+            with st.spinner('The Bot is thinking...'):
+                try:
+                    reply = None
+                    reply = query_handler.query(prompt)
+                except ConnectionError:
+                    reply = ':red[Failed to Connect]'
+
+        with chat_col.chat_message("bot"):
+            st.markdown(reply)
+            st.session_state.messages.append(
+                {"role": "bot", "content": reply})
+            st.session_state.process_prompt = True

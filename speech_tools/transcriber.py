@@ -112,20 +112,30 @@ class Transcriber:
             self.docs = []
             for result in text_generator:
                 self.loading_text.empty()
-                with self.loading_text.container():
-                    chunk = format_time(
-                        result.metadata["start_time"]) + ' to ' + format_time(result.metadata["end_time"])
-                    st.markdown(f':orange[Processing {chunk}]')
 
-                text = result.page_content
-                if text:
-                    self.container.markdown(f':green[**{text}**]')
-                    logging.debug(f'Transcribed Text of {chunk} : {text}')
-                    self.docs.append(result)
-                else:
-                    logging.debug(f'Could not transcribe Text of {chunk}')
-                    self.container.markdown(
-                        f':red[**Could not transcribe audio from {chunk}**]')
+                chunk_time = format_time(
+                    result.metadata["start_time"]) + ' to ' + format_time(result.metadata["end_time"])
+
+                chunk = result.metadata["chunk"]
+
+                total_chunks = result.metadata["total_chunks"]
+
+                with self.loading_text.container():
+                    st.markdown(
+                        f':orange[Processed chunk {chunk} / {total_chunks} ({chunk_time})]')
+
+                with self.container:
+                    text = result.page_content
+                    if text:
+                        self.container.markdown(f':green[**{text}**]')
+                        logging.debug(
+                            f'Transcribed Text of {chunk} : {text}')
+                        self.docs.append(result)
+                    else:
+                        logging.debug(
+                            f'Could not transcribe Text of {chunk}')
+                        self.container.markdown(
+                            f':red[**Could not transcribe audio from {chunk_time}**]')
 
             return self.docs
 

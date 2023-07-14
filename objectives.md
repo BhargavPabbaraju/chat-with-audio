@@ -39,7 +39,6 @@
 - Youtube video loader and run above steps - Done
 - Test multiple language youtube videos - Done
 - Remove Ads from Youtube videos - Half Done
-- Disable Chat Input when not needed
 - Display Chunk number
 
 - Whisper to transcribe audio
