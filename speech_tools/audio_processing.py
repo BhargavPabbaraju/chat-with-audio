@@ -24,6 +24,9 @@ from datetime import timedelta
 
 from utils.constants import Language
 
+# To use secrets
+import streamlit as st
+
 
 AudioSegment.ffmpeg = 'ffmpeg.exe'
 AudioSegment.ffprobe = 'ffprobe.exe'
@@ -50,7 +53,7 @@ class WhisperParser(BaseBlobParser):
         self.save_dir = save_dir
         self.language = language
         self.api_key = api_key
-        os.environ["OPENAI_API_KEY"] = api_key
+        st.secrets["OPENAI_API_KEY"] = api_key
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
         # Set the API key if provided

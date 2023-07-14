@@ -33,7 +33,7 @@ def query_handler_object(api_key: str) -> Union[HuggingFaceQueryHandler, OpenAIQ
     if api_key == 'free':
         return HuggingFaceQueryHandler()
     else:
-        return OpenAIQueryHandler()
+        return OpenAIQueryHandler(api_key)
 
 
 @st.cache_resource(show_spinner=False)
@@ -78,7 +78,6 @@ if not st.session_state.api_key:
         if option == api_key_options[0]:
             if api_key := st.text_input("OpenAI API Key", type='password', placeholder="Enter OpenAI API Key"):
                 st.session_state.api_key = api_key
-                os.environ["OPENAI_API_KEY"] = api_key
                 st.experimental_rerun()
 
         else:

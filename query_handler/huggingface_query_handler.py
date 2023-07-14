@@ -11,12 +11,11 @@ import logging
 from query_handler.abstract_query_handler import AbstractQueryHandler
 
 # Loading API Keys
-import os
-from dotenv import load_dotenv, find_dotenv
 
 
-load_dotenv(find_dotenv())
-HUGGINGFACEHUB_API_TOKEN = os.environ["HUGGINGFACEHUB_API_TOKEN"]
+import streamlit as st
+
+HUGGINGFACEHUB_API_TOKEN = st.secrets["HUGGINGFACEHUB_API_TOKEN"]
 
 
 # Check if GPU is available
