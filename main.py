@@ -50,7 +50,7 @@ def load_text(docs: List[Document]) -> None:
     query_handler.load_text(docs)
 
 
-st.title('Audio Q&A')
+st.title('Chat with Audio')
 
 
 # Initialize api key
