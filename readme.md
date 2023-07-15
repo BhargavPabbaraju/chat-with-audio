@@ -22,4 +22,4 @@ The audio files are transcribed into text using the Google Speech Recognition AP
 
 Currently, the application supports transcription and question-answering in 22 languages.
 
-Note: The purpose of this project is to facilitate asking questions on audio data using Language Model Models (LLMs).
+Note: The purpose of this project is to facilitate asking questions on audio data using Large Language Models (LLMs).
